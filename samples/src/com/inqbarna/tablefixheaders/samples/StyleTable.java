@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
 
+import com.inqbarna.tablefixheaders.CustomTableFixHeaders;
 import com.inqbarna.tablefixheaders.TableFixHeaders;
 import com.inqbarna.tablefixheaders.samples.adapters.SampleTableAdapter;
 
@@ -35,12 +36,12 @@ public class StyleTable extends Activity {
 
 		@Override
 		public int getRowCount() {
-			return 10;
+			return 20;
 		}
 
 		@Override
 		public int getColumnCount() {
-			return 6;
+			return 20;
 		}
 
 		@Override

@@ -1,9 +1,4 @@
-package com.inqbarna.tablefixheaders;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.inqbarna.tablefixheaders.adapters.TableAdapter;
+package com.inqbarna.tablefixheaders.adapters;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -12,7 +7,6 @@ import android.database.DataSetObserver;
 import android.graphics.Canvas;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -21,16 +15,19 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.Scroller;
 
+import com.inqbarna.tablefixheaders.R;
+import com.inqbarna.tablefixheaders.Recycler;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This view shows a table which can scroll in both directions. Also still
  * leaves the headers fixed.
  * 
  * @author Brais Gab�n (InQBarna)
  */
-public class TableFixHeaders extends ViewGroup {
-
-	public static final String TAG = "TableFixHeaders";
-
+public class BaseTableFixHeaders extends ViewGroup {
 	private int currentX;
 	private int currentY;
 
@@ -73,12 +70,12 @@ public class TableFixHeaders extends ViewGroup {
 
 	/**
 	 * Simple constructor to use when creating a view from code.
-	 * 
+	 *
 	 * @param context
 	 *            The Context the view is running in, through which it can
 	 *            access the current theme, resources, etc.
 	 */
-	public TableFixHeaders(Context context) {
+	public BaseTableFixHeaders(Context context) {
 		this(context, null);
 	}
 
@@ -88,17 +85,17 @@ public class TableFixHeaders extends ViewGroup {
 	 * that were specified in the XML file. This version uses a default style of
 	 * 0, so the only attribute values applied are those in the Context's Theme
 	 * and the given AttributeSet.
-	 * 
+	 *
 	 * The method onFinishInflate() will be called after all children have been
 	 * added.
-	 * 
+	 *
 	 * @param context
 	 *            The Context the view is running in, through which it can
 	 *            access the current theme, resources, etc.
 	 * @param attrs
 	 *            The attributes of the XML tag that is inflating the view.
 	 */
-	public TableFixHeaders(Context context, AttributeSet attrs) {
+	public BaseTableFixHeaders(Context context, AttributeSet attrs) {
 		super(context, attrs);
 
 		this.headView = null;
@@ -381,12 +378,11 @@ public class TableFixHeaders extends ViewGroup {
 		View view = makeView(-1, column, widths[column + 1], heights[0]);
 		rowViewList.add(index, view);
 
-		int row = firstRow;
+		int i = firstRow;
 		for (List<View> list : bodyViewTable) {
-			view = makeView(row, column, widths[column + 1], heights[row + 1]);
-			log("addLeftOrRight row " + "row " + row + " column " + column);
+			view = makeView(i, column, widths[column + 1], heights[i + 1]);
 			list.add(index, view);
-			row++;
+			i++;
 		}
 	}
 
@@ -396,10 +392,10 @@ public class TableFixHeaders extends ViewGroup {
 
 		List<View> list = new ArrayList<View>();
 		final int size = rowViewList.size() + firstColumn;
-		for (int column = firstColumn; column < size; column++) {
-			view = makeView(row, column, widths[column + 1], heights[row + 1]);
-			log("addTopAndBottom row " + "row " + row + " column " + column);
+		for (int i = firstColumn; i < size; i++) {
+			view = makeView(row, i, widths[i + 1], heights[row + 1]);
 			list.add(view);
+
 		}
 		bodyViewTable.add(index, list);
 	}
@@ -827,9 +823,5 @@ public class TableFixHeaders extends ViewGroup {
 				scroller.forceFinished(true);
 			}
 		}
-	}
-
-	private void log(String message) {
-		Log.d(TAG, message);
 	}
 }

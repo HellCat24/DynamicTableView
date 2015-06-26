@@ -1,5 +1,6 @@
 package com.inqbarna.tablefixheaders.samples;
 
+import com.inqbarna.tablefixheaders.CustomTableFixHeaders;
 import com.inqbarna.tablefixheaders.TableFixHeaders;
 import com.inqbarna.tablefixheaders.samples.adapters.MatrixTableAdapter;
 

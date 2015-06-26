@@ -3,6 +3,7 @@ package com.inqbarna.tablefixheaders.samples;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.inqbarna.tablefixheaders.CustomTableFixHeaders;
 import com.inqbarna.tablefixheaders.TableFixHeaders;
 import com.inqbarna.tablefixheaders.adapters.BaseTableAdapter;
 
