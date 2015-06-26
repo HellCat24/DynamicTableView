@@ -251,23 +251,26 @@ public class CustomTableFixHeaders extends ViewGroup {
 		 * have created the views from the top right corner on the X part and we
 		 * will have eliminated to generate the right at the Y.
 		 */
-        if (scrollX == 0) {
+        /*if (scrollX == 0) {
 
             // no op
         } else if (scrollX > 0) {
             log("scrollBy() scrollX > 0");
-            for (int row = firstRow; columnCount < rowCount; row++) {
+            for (int row = firstRow; firstRow < rowCount; row++) {
+                int tempScrollX = scrollX;
                 while (widths[row][firstColumn + 1] < scrollX) {
                     if (!rowViewList.isEmpty()) {
                         log("scrollBy() remove left view");
                         removeLeft();
                     }
-                    scrollX -= widths[row][firstColumn + 1];
-                    log("scrollBy() scrollX " + scrollX);
                     firstColumn++;
-                    log("scrollBy() firstColumn " + firstColumn);
+                    tempScrollX -= widths[row][firstColumn + 1];
+                   *//* scrollX -= widths[row][firstColumn + 1];
+                    log("scrollBy() scrollX " + scrollX);
+                    log("scrollBy() firstColumn " + firstColumn);*//*
                 }
             }
+            //TODO ADD CHECK FOR EACH ROW
             while (getFilledWidth() < width) {
                 log("addRight");
                 addRight();
@@ -295,7 +298,7 @@ public class CustomTableFixHeaders extends ViewGroup {
                     scrollX += widths[0][firstColumn + 1];
                 }
             }
-        }
+        }*/
 
         if (scrollY == 0) {
             // no op
@@ -350,8 +353,8 @@ public class CustomTableFixHeaders extends ViewGroup {
         return Math.max(0, sumArray(heights) - height);
     }
 
-    private int getFilledWidth() {
-        return widths[0][1] + sumArray(widths, 1, firstColumn + 1, rowViewList.size()) - scrollX;
+    private int getFilledWidth(int row) {
+        return widths[row][1] + sumArray(widths, row, firstColumn + 1, rowViewList.size()) - scrollX;
     }
 
     private int getFilledHeight() {
@@ -450,14 +453,11 @@ public class CustomTableFixHeaders extends ViewGroup {
         log("repositionViews()");
         int left, top, right, bottom, i;
 
-       /* for(int i = firstRow; i < 10; i++){
-
-        }
-
-        left = widths[0] - scrollX;
+        left = widths[0][0] - scrollX;
         i = firstColumn;
+        int j = firstColumn;
         for (View view : rowViewList) {
-            right = left + widths[++i];
+            right = left + widths[++i][j++];
             view.layout(left, 0, right, heights[0]);
             left = right;
         }
@@ -466,7 +466,7 @@ public class CustomTableFixHeaders extends ViewGroup {
         i = firstRow;
         for (View view : columnViewList) {
             bottom = top + heights[++i];
-            view.layout(0, top, widths[0], bottom);
+            view.layout(0, top, widths[0][0], bottom);
             top = bottom;
         }
 
@@ -474,15 +474,15 @@ public class CustomTableFixHeaders extends ViewGroup {
         i = firstRow;
         for (List<View> list : bodyViewTable) {
             bottom = top + heights[++i];
-            left = widths[0] - scrollX;
-            int j = firstColumn;
+            left = widths[i][0] - scrollX;
+            j = firstColumn;
             for (View view : list) {
-                right = left + widths[++j];
+                right = left + widths[i][++j];
                 view.layout(left, top, right, bottom);
                 left = right;
             }
             top = bottom;
-        }*/
+        }
         invalidate();
     }
 
@@ -535,7 +535,7 @@ public class CustomTableFixHeaders extends ViewGroup {
                     }
                     for (int i = 0; i < rowCount; i++) {
                         //TODO SET REAL HEADER SIZE
-                        widths[i][0] = 100;
+                        widths[i][0] = 150;
                     }
                 }
             }
@@ -656,7 +656,7 @@ public class CustomTableFixHeaders extends ViewGroup {
         if (desiredScroll == 0) {
             // no op
         } else if (desiredScroll < 0) {
-            desiredScroll = Math.max(desiredScroll, -sumArray(sizes, 1,firstCell));
+            desiredScroll = Math.max(desiredScroll, -sumArray(sizes, 1, firstCell));
         } else {
             desiredScroll = Math.min(desiredScroll, Math.max(0, sumArray(sizes, firstCell + 1, sizes.length - 1 - firstCell) + sizes[0] - viewSize));
         }
