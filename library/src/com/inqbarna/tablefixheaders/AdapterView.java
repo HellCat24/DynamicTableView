@@ -1,26 +1,17 @@
 package com.inqbarna.tablefixheaders;
 
 import android.content.Context;
-import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Adapter;
-import android.widget.AdapterView;
 
 /**
- * Created by tac on 26.06.15.
+ * Created by tac on 30.06.15.
  */
-public class TableView extends AdapterView {
+public class AdapterView extends android.widget.AdapterView {
 
-    public TableView(Context context) {
+
+    public AdapterView(Context context) {
         super(context);
-    }
-
-    public TableView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-
-    public TableView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
     }
 
     @Override

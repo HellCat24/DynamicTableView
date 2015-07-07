@@ -30,18 +30,28 @@ public class StyleTable extends Activity {
 
 			Resources resources = context.getResources();
 
-			width = resources.getDimensionPixelSize(R.dimen.table_width);
-			height = resources.getDimensionPixelSize(R.dimen.table_height);
+			width = 200;
+			height = 200;
 		}
 
 		@Override
 		public int getRowCount() {
+			return 1;
+		}
+
+		@Override
+		public int getMaxColumnCount() {
 			return 20;
 		}
 
 		@Override
-		public int getColumnCount() {
-			return 20;
+		public int getHeaderWidth() {
+			return 200;
+		}
+
+		@Override
+		public int getWidth(int row, int column) {
+			return 0;
 		}
 
 		@Override
@@ -87,6 +97,11 @@ public class StyleTable extends Activity {
 		@Override
 		public int getViewTypeCount() {
 			return 2;
+		}
+
+		@Override
+		public int getItemId(int position) {
+			return 0;
 		}
 	}
 }

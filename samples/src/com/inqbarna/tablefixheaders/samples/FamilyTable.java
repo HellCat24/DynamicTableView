@@ -111,8 +111,13 @@ public class FamilyTable extends Activity {
 		}
 
 		@Override
-		public int getColumnCount() {
+		public int getMaxColumnCount() {
 			return 6;
+		}
+
+		@Override
+		public int getHeaderWidth() {
+			return 0;
 		}
 
 		@Override
@@ -138,6 +143,11 @@ public class FamilyTable extends Activity {
 					throw new RuntimeException("wtf?");
 			}
 			return view;
+		}
+
+		@Override
+		public int getWidth(int row, int column) {
+			return 0;
 		}
 
 		private View getFirstHeader(int row, int column, View convertView, ViewGroup parent) {
@@ -254,6 +264,11 @@ public class FamilyTable extends Activity {
 		@Override
 		public int getViewTypeCount() {
 			return 5;
+		}
+
+		@Override
+		public int getItemId(int position) {
+			return 0;
 		}
 	}
 }

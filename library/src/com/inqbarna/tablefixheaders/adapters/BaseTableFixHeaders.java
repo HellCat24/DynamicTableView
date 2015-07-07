@@ -488,7 +488,7 @@ public class BaseTableFixHeaders extends ViewGroup {
 
 		if (adapter != null) {
 			this.rowCount = adapter.getRowCount();
-			this.columnCount = adapter.getColumnCount();
+			this.columnCount = adapter.getMaxColumnCount();
 
 			widths = new int[columnCount + 1];
 			for (int i = -1; i < columnCount; i++) {

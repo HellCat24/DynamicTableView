@@ -46,8 +46,13 @@ public class MatrixTableAdapter<T> extends BaseTableAdapter {
 	}
 
 	@Override
-	public int getColumnCount() {
+	public int getMaxColumnCount() {
 		return table[0].length - 1;
+	}
+
+	@Override
+	public int getHeaderWidth() {
+		return 200;
 	}
 
 	@Override
@@ -58,6 +63,11 @@ public class MatrixTableAdapter<T> extends BaseTableAdapter {
 		}
 		((TextView) convertView).setText(table[row + 1][column + 1].toString());
 		return convertView;
+	}
+
+	@Override
+	public int getWidth(int row, int column) {
+		return 0;
 	}
 
 	@Override
@@ -78,5 +88,10 @@ public class MatrixTableAdapter<T> extends BaseTableAdapter {
 	@Override
 	public int getViewTypeCount() {
 		return 1;
+	}
+
+	@Override
+	public int getItemId(int position) {
+		return 0;
 	}
 }

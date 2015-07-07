@@ -35,7 +35,11 @@
             android:label="@string/family_adapter" >
         </activity>
         <activity
-            android:name="com.inqbarna.tablefixheaders.samples.custom.CustomStyleTable"
+            android:name="com.inqbarna.tablefixheaders.samples.TestActivity"
+            android:label="@string/family_adapter" >
+        </activity>
+        <activity
+            android:name=".custom.CustomActivity"
             android:label="@string/family_adapter" >
         </activity>
     </application>

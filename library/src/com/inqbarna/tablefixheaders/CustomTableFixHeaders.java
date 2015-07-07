@@ -1,11 +1,8 @@
 package com.inqbarna.tablefixheaders;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.database.DataSetObserver;
-import android.graphics.Canvas;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -13,7 +10,6 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.Scroller;
 
 import com.inqbarna.tablefixheaders.adapters.TableAdapter;
@@ -21,36 +17,37 @@ import com.inqbarna.tablefixheaders.adapters.TableAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * This view shows a table which can scroll in both directions. Also still
- * leaves the headers fixed.
- *
- * @author Brais Gab�n (InQBarna)
- */
 public class CustomTableFixHeaders extends ViewGroup {
 
     public static final String TAG = "TableFixHeaders";
+
+    private final int HEADER_INDEX = 0;
 
     private int currentX;
     private int currentY;
 
     private TableAdapter adapter;
-    private int scrollX;
+    private int scrollX[];
     private int scrollY;
     //visible rows
     private int firstRow;
-    private int firstColumn;
+    //visible header column
+    private int[] leftColumnIndex;
     //items measures
     private int[][] widths;
     private int[] heights;
 
     private int maxRowWidth;
 
+    //header in left top corner
     @SuppressWarnings("unused")
     private View headView;
 
+    // upper header
     private List<View> rowViewList;
+    //left header
     private List<View> columnViewList;
+    //items list
     private List<List<View>> bodyViewTable;
 
     private int rowCount;
@@ -73,30 +70,10 @@ public class CustomTableFixHeaders extends ViewGroup {
 
     private int touchSlop;
 
-    /**
-     * Simple constructor to use when creating a view from code.
-     *
-     * @param context The Context the view is running in, through which it can
-     *                access the current theme, resources, etc.
-     */
     public CustomTableFixHeaders(Context context) {
         this(context, null);
     }
 
-    /**
-     * Constructor that is called when inflating a view from XML. This is called
-     * when a view is being constructed from an XML file, supplying attributes
-     * that were specified in the XML file. This version uses a default style of
-     * 0, so the only attribute values applied are those in the Context's Theme
-     * and the given AttributeSet.
-     * <p/>
-     * The method onFinishInflate() will be called after all children have been
-     * added.
-     *
-     * @param context The Context the view is running in, through which it can
-     *                access the current theme, resources, etc.
-     * @param attrs   The attributes of the XML tag that is inflating the view.
-     */
     public CustomTableFixHeaders(Context context, AttributeSet attrs) {
         super(context, attrs);
 
@@ -114,22 +91,10 @@ public class CustomTableFixHeaders extends ViewGroup {
         this.maximumVelocity = configuration.getScaledMaximumFlingVelocity();
     }
 
-    /**
-     * Returns the adapter currently associated with this widget.
-     *
-     * @return The adapter used to provide this view's content.
-     */
     public TableAdapter getAdapter() {
         return adapter;
     }
 
-    /**
-     * Sets the data behind this TableFixHeaders.
-     *
-     * @param adapter The TableAdapter which is responsible for maintaining the data
-     *                backing this list and for producing a view to represent an
-     *                item in that data set.
-     */
     public void setAdapter(TableAdapter adapter) {
         if (this.adapter != null) {
             this.adapter.unregisterDataSetObserver(tableAdapterDataSetObserver);
@@ -141,9 +106,7 @@ public class CustomTableFixHeaders extends ViewGroup {
 
         this.recycler = new Recycler(adapter.getViewTypeCount());
 
-        scrollX = 0;
         scrollY = 0;
-        firstColumn = 0;
         firstRow = 0;
 
         needRelayout = true;
@@ -221,25 +184,42 @@ public class CustomTableFixHeaders extends ViewGroup {
     @Override
     public void scrollTo(int x, int y) {
         if (needRelayout) {
-            scrollX = x;
-            firstColumn = 0;
+
+            for (int i = 0; i < rowCount + 1; i++) {
+                leftColumnIndex[i] = 0;
+                scrollX[i] = x;
+            }
 
             scrollY = y;
             firstRow = 0;
         } else {
-            scrollBy(x - sumArray(widths, 0, 1, firstColumn) - scrollX, y - sumArray(heights, 1, firstRow) - scrollY);
+
+            throw new RuntimeException("scrollTo not supported");
+          /*  int tempX;
+
+            if(x!=0){
+                for (int row = 0; row < rowCount + 1; row++) {
+                    tempX = x;
+                    tempX = tempX - sumArray(widths, row, 1, leftColumnIndex[row]) - scrollX[row];
+                    scrollX[row] += tempX;
+                }
+            }
+
+            scrollBy(x, y - sumArray(heights, 1, firstRow) - scrollY);*/
         }
     }
 
     @Override
     public void scrollBy(int x, int y) {
-        log("scrollBy() " + "x - " + x + ", y - " + y);
-        scrollX += x;
-        scrollY += y;
-        log("scrollBy() updated scroll values " + "scrollX - " + scrollX + ", scrollY - " + scrollY);
 
-        if (needRelayout) {
-            log("scrollBy() needRelayout - true");
+        if (x != 0) {
+            for (int row = 0; row < rowCount + 1; row++) {
+                scrollX[row] += x;
+            }
+        }
+        scrollY += y;
+
+        if (x == 0 && y == 0 || needRelayout) {
             return;
         }
 
@@ -251,85 +231,127 @@ public class CustomTableFixHeaders extends ViewGroup {
 		 * have created the views from the top right corner on the X part and we
 		 * will have eliminated to generate the right at the Y.
 		 */
-        /*if (scrollX == 0) {
 
-            // no op
-        } else if (scrollX > 0) {
-            log("scrollBy() scrollX > 0");
-            for (int row = firstRow; firstRow < rowCount; row++) {
-                int tempScrollX = scrollX;
-                while (widths[row][firstColumn + 1] < scrollX) {
-                    if (!rowViewList.isEmpty()) {
-                        log("scrollBy() remove left view");
-                        removeLeft();
-                    }
-                    firstColumn++;
-                    tempScrollX -= widths[row][firstColumn + 1];
-                   *//* scrollX -= widths[row][firstColumn + 1];
-                    log("scrollBy() scrollX " + scrollX);
-                    log("scrollBy() firstColumn " + firstColumn);*//*
-                }
-            }
-            //TODO ADD CHECK FOR EACH ROW
-            while (getFilledWidth() < width) {
-                log("addRight");
-                addRight();
-            }
-        } else {
-            log("scrollBy() scrollX < 0");
-            while (!rowViewList.isEmpty() && getFilledWidth() - widths[0][firstColumn + rowViewList.size()] >= width) {
-                log("removeRight");
-                removeRight();
-            }
-            if (rowViewList.isEmpty()) {
-                while (scrollX < 0) {
-                    firstColumn--;
-                    scrollX += widths[0][firstColumn + 1];
-                }
-                while (getFilledWidth() < width) {
-                    log("addRight");
-                    addRight();
-                }
+        int visibleRowSize = firstRow + columnViewList.size();
+        //visible/relation item row
+        int itemRow = 0;
+
+        for (int row = 0; row < rowCount + 1; row++) {
+
+            // header
+            if (row == 0) {
+
             } else {
-                while (0 > scrollX) {
-                    log("addLeft");
-                    addLeft();
-                    firstColumn--;
-                    scrollX += widths[0][firstColumn + 1];
-                }
-            }
-        }*/
+                //item
+                if (scrollX[row] != 0) {
+                    if (scrollX[row] > 0) {
 
-        if (scrollY == 0) {
-            // no op
-        } else if (scrollY > 0) {
-            while (heights[firstRow + 1] < scrollY) {
-                if (!columnViewList.isEmpty()) {
-                    removeTop();
+                        // update non visible views first visible column values
+                        if (row > firstRow && row <= visibleRowSize) {
+
+                            while (widths[row][leftColumnIndex[row] + 1] < scrollX[row]) {
+                                if (bodyViewTable.get(itemRow).size() > 1) {
+                                    removeLeft(itemRow);
+                                    scrollX[row] -= widths[row][leftColumnIndex[row] + 1];
+                                    leftColumnIndex[row]++;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            int tempItemSize = bodyViewTable.get(itemRow).size();
+
+                            while (getFilledWidth(row, tempItemSize) < width) {
+                                if (addRight(itemRow, row)) {
+                                    tempItemSize++;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            itemRow++;
+                        } else {
+
+                            while (widths[row][leftColumnIndex[row] + 1] < scrollX[row]) {
+                                scrollX[row] -= widths[row][leftColumnIndex[row] + 1];
+                                leftColumnIndex[row]++;
+                            }// update visible views first visible column values, add or delete views
+                        }
+                    } else {
+                        if (row > firstRow && row <= visibleRowSize) {
+
+                            while (getFilledWidth(row, bodyViewTable.get(itemRow).size()) - widths[row][leftColumnIndex[row] + bodyViewTable.get(itemRow).size()] >= width) {
+                                removeRight(itemRow);
+                            }
+
+                            int tempItemSize = bodyViewTable.get(itemRow).size();
+
+                            if (rowViewList.isEmpty()) {
+                                while (scrollX[row] < 0) {
+                                    leftColumnIndex[row]--;
+                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
+                                }
+                                while (getFilledWidth(row, tempItemSize) < width) {
+                                    addRight(itemRow, row);
+                                }
+                            } else {
+                                while (0 > scrollX[row]) {
+                                    addLeft(itemRow, row);
+                                    leftColumnIndex[row]--;
+                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
+                                }
+                            }
+
+                            itemRow++;
+                        } else {
+
+                            if (rowViewList.isEmpty()) {
+                                while (scrollX[row] < 0) {
+                                    leftColumnIndex[row]--;
+                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
+                                }
+                            } else {
+                                while (0 > scrollX[row]) {
+                                    leftColumnIndex[row]--;
+                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
+                                }
+                            }
+                        }
+                    }
                 }
-                scrollY -= heights[firstRow + 1];
-                firstRow++;
             }
-            while (getFilledHeight() < height) {
-                addBottom();
-            }
-        } else {
-            while (!columnViewList.isEmpty() && getFilledHeight() - heights[firstRow + columnViewList.size()] >= height) {
-                removeBottom();
-            }
-            if (columnViewList.isEmpty()) {
-                while (scrollY < 0) {
-                    firstRow--;
-                    scrollY += heights[firstRow + 1];
+        }
+
+        if (scrollY != 0) {
+            if (scrollY > 0) {
+                while (heights[firstRow + 1] < scrollY) {
+                    if (!columnViewList.isEmpty()) {
+                        removeTop();
+                    }
+                    scrollY -= heights[firstRow + 1];
+                    firstRow++;
                 }
                 while (getFilledHeight() < height) {
                     addBottom();
                 }
             } else {
-                while (0 > scrollY) {
-                    addTop();
-                    firstRow--;
-                    scrollY += heights[firstRow + 1];
+                while (!columnViewList.isEmpty() && getFilledHeight() - heights[firstRow + columnViewList.size()] >= height) {
+                    removeBottom();
+                }
+                if (columnViewList.isEmpty()) {
+                    while (scrollY < 0) {
+                        firstRow--;
+                        scrollY += heights[firstRow + 1];
+                    }
+                    while (getFilledHeight() < height) {
+                        addBottom();
+                    }
+                } else {
+                    while (0 > scrollY) {
+                        addTop();
+                        firstRow--;
+                        scrollY += heights[firstRow + 1];
+                    }
                 }
             }
         }
@@ -337,98 +359,101 @@ public class CustomTableFixHeaders extends ViewGroup {
         repositionViews();
     }
 
-    public int getActualScrollX() {
-        return scrollX + sumArray(widths, 1, 1, firstColumn);
+    /**
+     * Added right view
+     *
+     * @param itemRow  relation (относительный) row i.e. visible row position in bodyViewTable
+     * @param addedRow row to add (абсолютный)
+     */
+    private void addLeft(int itemRow, int addedRow) {
+        //addHorizontalHeader(leftColumnIndex[row] - 1, 0);
+        int column = leftColumnIndex[addedRow] - 1;
+        List<View> list = bodyViewTable.get(itemRow);
+        View view = makeView(addedRow - 1, column, widths[addedRow][column + 1], heights[addedRow]);
+        list.add(0, view);
     }
 
-    public int getActualScrollY() {
-        return scrollY + sumArray(heights, 1, firstRow);
+    /**
+     * Added right view
+     *
+     * @param itemRow  relation (относительный) row i.e. visible row position in bodyViewTable
+     * @param addedRow row to add (абсолютный)
+     */
+    private boolean addRight(int itemRow, int addedRow) {
+        //addHorizontalHeader(firstVisibleColumn + rowItemsSize, rowViewList.size());
+        List<View> list = bodyViewTable.get(itemRow);
+        int rowItemsSize = list.size();
+
+        int column = leftColumnIndex[addedRow] + rowItemsSize;
+        //log("Added row " + addedRow + "column " + column);
+        if (column < columnCount) {
+            //column[0] is for indexes so we need to use [column + 1] to get row data
+            //adapter has
+            View view = makeView(addedRow - 1, column, widths[addedRow][column + 1], heights[addedRow]);
+            list.add(view);
+            return true;
+        }
+        return false;
     }
 
-    private int getMaxScrollX() {
-        return Math.max(0, maxRowWidth - width);
+    private void addHorizontalItem(int column, int row, int itemIndex) {
+        //add items
+        List<View> list = bodyViewTable.get(row);
+        View view = makeView(row, column, widths[row][column + 1], heights[row]);
+        list.add(itemIndex, view);
     }
 
-    private int getMaxScrollY() {
-        return Math.max(0, sumArray(heights) - height);
-    }
-
-    private int getFilledWidth(int row) {
-        return widths[row][1] + sumArray(widths, row, firstColumn + 1, rowViewList.size()) - scrollX;
-    }
-
-    private int getFilledHeight() {
-        return heights[0] + sumArray(heights, firstRow + 1, columnViewList.size()) - scrollY;
-    }
-
-    private void addLeft() {
-        addLeftOrRight(firstColumn - 1, 0);
+    //add row header
+    private void addHorizontalHeader(int column, int headerIndex) {
+        View view = makeView(-1, column, widths[0][column + 1], heights[0]);
+        rowViewList.add(headerIndex, view);
     }
 
     private void addTop() {
-        addTopAndBottom(firstRow - 1, 0);
-    }
-
-    private void addRight() {
-        log("addRight()");
-        final int size = rowViewList.size();
-        addLeftOrRight(firstColumn + size, size);
+        addVerticalItem(firstRow - 1, 0);
     }
 
     private void addBottom() {
         final int size = columnViewList.size();
-        addTopAndBottom(firstRow + size, size);
+        addVerticalItem(firstRow + size, size);
     }
 
-    //coulmn
-    private void addLeftOrRight(int column, int index) {
-        log("addLeftOrRight() column - " + column + " index - " + index);
-        View view = makeView(-1, column, widths[0][column + 1], heights[0]);
-        rowViewList.add(index, view);
-
-        int i = firstRow;
-        for (List<View> list : bodyViewTable) {
-            view = makeView(i, column, widths[i][column + 1], heights[i + 1]);
-            list.add(index, view);
-            i++;
-        }
-    }
-
-    //row
-    private void addTopAndBottom(int row, int index) {
-        View view = makeView(row, -1, widths[0][0], heights[row + 1]);
+    private void addVerticalItem(int row, int index) {
+        //add column header
+        View view = makeView(row, -1, widths[row + 1][0], heights[row + 1]);
         columnViewList.add(index, view);
 
         List<View> list = new ArrayList<View>();
-        final int size = rowViewList.size() + firstColumn;
-        for (int i = firstColumn; i < size; i++) {
-            view = makeView(row, i, widths[i + 1][i], heights[row + 1]);
+
+        // row + 1 - actual item size in widths
+        // row - used in adapter
+        int left = widths[row + 1][0] - scrollX[row];
+        for (int j = leftColumnIndex[row + 1]; j < columnCount && left < width; j++) {
+            left = left + widths[row + 1][j + 1];
+            view = makeView(row, j, widths[row + 1][j], heights[row + 1]);
             list.add(view);
         }
         bodyViewTable.add(index, list);
     }
 
-    private void removeLeft() {
-        removeLeftOrRight(0);
+    private void removeLeft(int row) {
+        removeLeftOrRight(0, row);
     }
 
-    private void removeTop() {
-        removeTopOrBottom(0);
+    private synchronized void removeRight(int row) {
+        removeLeftOrRight(bodyViewTable.get(row).size() - 1, row);
     }
 
-    private void removeRight() {
-        removeLeftOrRight(rowViewList.size() - 1);
+    private void removeLeftOrRight(int position, int row) {
+        removeView(bodyViewTable.get(row).remove(position));
     }
 
     private void removeBottom() {
         removeTopOrBottom(columnViewList.size() - 1);
     }
 
-    private void removeLeftOrRight(int position) {
-        removeView(rowViewList.remove(position));
-        for (List<View> list : bodyViewTable) {
-            removeView(list.remove(position));
-        }
+    private void removeTop() {
+        removeTopOrBottom(0);
     }
 
     private void removeTopOrBottom(int position) {
@@ -449,43 +474,6 @@ public class CustomTableFixHeaders extends ViewGroup {
         }
     }
 
-    private void repositionViews() {
-        log("repositionViews()");
-        int left, top, right, bottom, i;
-
-        left = widths[0][0] - scrollX;
-        i = firstColumn;
-        int j = firstColumn;
-        for (View view : rowViewList) {
-            right = left + widths[++i][j++];
-            view.layout(left, 0, right, heights[0]);
-            left = right;
-        }
-
-        top = heights[0] - scrollY;
-        i = firstRow;
-        for (View view : columnViewList) {
-            bottom = top + heights[++i];
-            view.layout(0, top, widths[0][0], bottom);
-            top = bottom;
-        }
-
-        top = heights[0] - scrollY;
-        i = firstRow;
-        for (List<View> list : bodyViewTable) {
-            bottom = top + heights[++i];
-            left = widths[i][0] - scrollX;
-            j = firstColumn;
-            for (View view : list) {
-                right = left + widths[i][++j];
-                view.layout(left, top, right, bottom);
-                left = right;
-            }
-            top = bottom;
-        }
-        invalidate();
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -497,20 +485,29 @@ public class CustomTableFixHeaders extends ViewGroup {
         final int h;
 
         if (adapter != null) {
+
             this.rowCount = adapter.getRowCount();
-            this.columnCount = adapter.getColumnCount();
+            this.columnCount = adapter.getMaxColumnCount();
+
+            if (leftColumnIndex == null) {
+                leftColumnIndex = new int[rowCount + 1];
+            }
+
+            if (scrollX == null) {
+                scrollX = new int[rowCount + 1];
+            }
 
             widths = new int[rowCount + 1][columnCount + 1];
-            int maxWidth = 0;
+
             for (int i = -1; i < rowCount; i++) {
-                maxRowWidth = 0;
+                int maxWidth = 0;
                 for (int j = -1; j < columnCount; j++) {
-                    int itemWidth = adapter.getWidth(i);
-                    widths[i + 1][j + 1] += adapter.getWidth(i);
-                    maxRowWidth = +itemWidth;
+                    int itemWidth = adapter.getWidth(i, j);
+                    widths[i + 1][j + 1] = itemWidth;
+                    maxWidth += itemWidth;
                 }
-                if (maxWidth < maxRowWidth) {
-                    maxWidth = maxRowWidth;
+                if (maxWidth > maxRowWidth) {
+                    maxRowWidth = maxWidth;
                 }
             }
 
@@ -519,23 +516,18 @@ public class CustomTableFixHeaders extends ViewGroup {
                 heights[i + 1] += adapter.getHeight(i);
             }
 
-
             if (widthMode == MeasureSpec.AT_MOST) {
-                w = Math.min(widthSize, maxWidth);
+                w = Math.min(widthSize, maxRowWidth);
             } else if (widthMode == MeasureSpec.UNSPECIFIED) {
-                w = maxWidth;
+                w = maxRowWidth;
             } else {
                 w = widthSize;
-                if (maxWidth < widthSize) {
-                    final float factor = widthSize / (float) maxWidth;
+                if (maxRowWidth < widthSize) {
+                    final float factor = widthSize / (float) maxRowWidth;
                     for (int i = 1; i < rowCount; i++) {
                         for (int j = 1; j < columnCount; j++) {
-                            widths[i][j] += Math.round(widths[i][j] * factor);
+                            widths[i][j] = Math.round(widths[i][j] * factor);
                         }
-                    }
-                    for (int i = 0; i < rowCount; i++) {
-                        //TODO SET REAL HEADER SIZE
-                        widths[i][0] = 150;
                     }
                 }
             }
@@ -561,33 +553,13 @@ public class CustomTableFixHeaders extends ViewGroup {
             firstRow = 0;
             scrollY = Integer.MAX_VALUE;
         }
-        if (firstColumn >= columnCount || getMaxScrollX() - getActualScrollX() < 0) {
-            firstColumn = 0;
-            scrollX = Integer.MAX_VALUE;
+        if (leftColumnIndex[0] >= columnCount || getMaxScrollX() - getActualScrollX() < 0) {
+            leftColumnIndex[0] = 0;
+            for (int i = 0; i < rowCount + 1; i++) {
+                scrollX[i] = Integer.MAX_VALUE;
+            }
         }
-
         setMeasuredDimension(w, h);
-    }
-
-    private int sumArray(int array[]) {
-        return sumArray(array, 0, array.length);
-    }
-
-    private int sumArray(int array[], int firstIndex, int count) {
-        int sum = 0;
-        count += firstIndex;
-        for (int i = firstIndex; i < count; i++) {
-            sum += array[i];
-        }
-        return sum;
-    }
-
-    private int sumArray(int array[][], int row, int startColumn, int count) {
-        int sum = 0;
-        for (int i = startColumn; i < count; i++) {
-            sum += array[row][i];
-        }
-        return sum;
     }
 
     @SuppressLint("DrawAllocation")
@@ -611,8 +583,8 @@ public class CustomTableFixHeaders extends ViewGroup {
                 scrollBounds();
                 adjustFirstCellsAndScroll();
 
-                left = widths[0][0] - scrollX;
-                for (int i = firstColumn; i < columnCount && left < width; i++) {
+                left = widths[0][0] - scrollX[0];
+                for (int i = leftColumnIndex[0]; i < columnCount && left < width; i++) {
                     right = left + widths[0][i + 1];
                     final View view = makeAndSetup(-1, i, left, 0, right, heights[0]);
                     rowViewList.add(view);
@@ -629,11 +601,12 @@ public class CustomTableFixHeaders extends ViewGroup {
 
                 top = heights[0] - scrollY;
                 for (int i = firstRow; i < rowCount && top < height; i++) {
+                    // i + 1 skip header position for initial draw
                     bottom = top + heights[i + 1];
-                    left = widths[i][0] - scrollX;
+                    left = widths[i + 1][0] - scrollX[i + 1];
                     List<View> list = new ArrayList<View>();
-                    for (int j = firstColumn; j < columnCount && left < width; j++) {
-                        right = left + widths[0][j + 1];
+                    for (int j = leftColumnIndex[i]; j < columnCount && left < width; j++) {
+                        right = left + widths[i + 1][j + 1];
                         final View view = makeAndSetup(i, j, left, top, right, bottom);
                         list.add(view);
                         left = right;
@@ -645,11 +618,51 @@ public class CustomTableFixHeaders extends ViewGroup {
         }
     }
 
+    private void repositionViews() {
+        int left, top, right, bottom, i;
+
+        left = widths[HEADER_INDEX][0] - scrollX[0];
+        i = firstRow;
+        for (View view : rowViewList) {
+            right = left + widths[HEADER_INDEX][0];
+            view.layout(left, 0, right, heights[0]);
+            left = right;
+        }
+
+        top = heights[0] - scrollY;
+        i = firstRow;
+        for (View view : columnViewList) {
+            bottom = top + heights[++i];
+            view.layout(0, top, widths[HEADER_INDEX][0], bottom);
+            top = bottom;
+        }
+
+        top = heights[0] - scrollY;
+        i = firstRow;
+        for (List<View> list : bodyViewTable) {
+            bottom = top + heights[++i];
+            int j = leftColumnIndex[i]; //+ 1 >= columnCount ? columnCount - list.size() : leftColumnIndex[i];
+            left = widths[0][j] - scrollX[i];
+            for (View view : list) {
+                try {
+                    right = left + widths[i][++j];
+                    view.layout(left, top, right, bottom);
+                    left = right;
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    e.printStackTrace();
+                }
+            }
+            top = bottom;
+        }
+        invalidate();
+    }
+
+
     private void scrollBounds() {
-        log("scrollBounds()");
-        scrollX = scrollBounds(scrollX, firstColumn, widths, width);
-        scrollY = scrollBounds(scrollY, firstRow, heights, height);
-        log("scrollBounds() updated scroll values " + "scrollX - " + scrollX + ", scrollY - " + scrollY);
+        for (int row = 0; row < rowCount + 1; row++) {
+            scrollX[row] = scrollWidthBounds(scrollX[row], leftColumnIndex[row], widths, width, row);
+            scrollY = scrollBounds(scrollY, firstRow, heights, height);
+        }
     }
 
     private int scrollBounds(int desiredScroll, int firstCell, int sizes[], int viewSize) {
@@ -663,13 +676,16 @@ public class CustomTableFixHeaders extends ViewGroup {
         return desiredScroll;
     }
 
-    private int scrollBounds(int desiredScroll, int firstCell, int sizes[][], int viewSize) {
+    private int scrollWidthBounds(int desiredScroll, int firstCell, int sizes[][], int viewSize, int row) {
         if (desiredScroll == 0) {
             // no op
         } else if (desiredScroll < 0) {
-            desiredScroll = Math.max(desiredScroll, -sumArray(sizes, 1, 0, firstCell));
+            desiredScroll = Math.max(desiredScroll, -sumArray(sizes, row, 1, firstCell));
         } else {
-            desiredScroll = Math.min(desiredScroll, Math.max(0, sumArray(sizes, firstCell + 1, 0, sizes.length - 1 - firstCell) + sizes[0][0] - viewSize));
+            // columnCount - 1 to get last item index
+            if (leftColumnIndex[row] != columnCount - 1) {
+                desiredScroll = Math.min(desiredScroll, Math.max(0, sumArray(sizes, row, 0, sizes[row].length - 1 - firstCell + 1) + sizes[row][0] - viewSize));
+            }
         }
         return desiredScroll;
     }
@@ -677,9 +693,11 @@ public class CustomTableFixHeaders extends ViewGroup {
     private void adjustFirstCellsAndScroll() {
         int values[];
 
-        values = adjustFirstCellsAndScroll(scrollX, firstColumn, widths);
-        scrollX = values[0];
-        firstColumn = values[1];
+        for (int row = 0; row < rowCount + 1; row++) {
+            values = adjustFirstCellsAndScroll(scrollX[row], leftColumnIndex[row], widths);
+            scrollX[row] = values[0];
+            leftColumnIndex[row] = values[1];
+        }
 
         values = adjustFirstCellsAndScroll(scrollY, firstRow, heights);
         scrollY = values[0];
@@ -720,16 +738,6 @@ public class CustomTableFixHeaders extends ViewGroup {
         return new int[]{scroll, firstCell};
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    @SuppressWarnings("deprecation")
-    private void setAlpha(ImageView imageView, float alpha) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            imageView.setAlpha(alpha);
-        } else {
-            imageView.setAlpha(Math.round(alpha * 255));
-        }
-    }
-
     private void resetTable() {
         headView = null;
         rowViewList.clear();
@@ -743,31 +751,6 @@ public class CustomTableFixHeaders extends ViewGroup {
         final View view = makeView(row, column, right - left, bottom - top);
         view.layout(left, top, right, bottom);
         return view;
-    }
-
-    @Override
-    protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-        final boolean ret;
-
-        final Integer row = (Integer) child.getTag(R.id.tag_row);
-        final Integer column = (Integer) child.getTag(R.id.tag_column);
-        // row == null => Shadow view
-        if (row == null || (row == -1 && column == -1)) {
-            ret = super.drawChild(canvas, child, drawingTime);
-        } else {
-            canvas.save();
-            if (row == -1) {
-                canvas.clipRect(widths[0][column], 0, canvas.getWidth(), canvas.getHeight());
-            } else if (column == -1) {
-                canvas.clipRect(0, heights[0], canvas.getWidth(), canvas.getHeight());
-            } else {
-                canvas.clipRect(widths[0][column], heights[0], canvas.getWidth(), canvas.getHeight());
-            }
-
-            ret = super.drawChild(canvas, child, drawingTime);
-            canvas.restore();
-        }
-        return ret;
     }
 
     private View makeView(int row, int column, int w, int h) {
@@ -796,6 +779,55 @@ public class CustomTableFixHeaders extends ViewGroup {
         } else {
             addView(view, 0);
         }
+    }
+
+    private int sumArray(int array[]) {
+        return sumArray(array, 0, array.length);
+    }
+
+    private int sumArray(int array[], int firstIndex, int count) {
+        int sum = 0;
+        count += firstIndex;
+        for (int i = firstIndex; i < count; i++) {
+            sum += array[i];
+        }
+        return sum;
+    }
+
+    private int sumArray(int array[][], int row, int startColumn, int count) {
+        int sum = 0;
+        count += startColumn;
+        if (count > array[row].length) {
+            count = array[row].length;
+        }
+        for (int i = startColumn; i < count; i++) {
+            sum += array[row][i];
+        }
+        return sum;
+    }
+
+    public int getActualScrollX() {
+        return scrollX[0] + sumArray(widths, 1, 0, leftColumnIndex[0]);
+    }
+
+    public int getActualScrollY() {
+        return scrollY + sumArray(heights, 1, firstRow);
+    }
+
+    private int getMaxScrollX() {
+        return Math.max(0, maxRowWidth - width);
+    }
+
+    private int getMaxScrollY() {
+        return Math.max(0, sumArray(heights) - height);
+    }
+
+    private int getFilledWidth(int row, int initialItemsCount) {
+        return widths[row][0] + sumArray(widths, row, leftColumnIndex[row] + 1, initialItemsCount) - scrollX[row];
+    }
+
+    private int getFilledHeight() {
+        return heights[0] + sumArray(heights, firstRow + 1, columnViewList.size()) - scrollY;
     }
 
     private class TableAdapterDataSetObserver extends DataSetObserver {

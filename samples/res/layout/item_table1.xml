@@ -9,6 +9,8 @@
     <TextView
         android:id="@android:id/text1"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Porro Et Aut Quilitu \n
+        05:32 - 0.43"/>
 
 </LinearLayout>
