@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
 
-import com.inqbarna.tablefixheaders.CustomTableFixHeaders;
 import com.inqbarna.tablefixheaders.TableFixHeaders;
 import com.inqbarna.tablefixheaders.samples.adapters.SampleTableAdapter;
 
@@ -45,7 +44,12 @@ public class StyleTable extends Activity {
 		}
 
 		@Override
-		public int getHeaderWidth() {
+		public int getHorizontalHeaderWidth() {
+			return 200;
+		}
+
+		@Override
+		public int getVerticalHeaderWidth() {
 			return 200;
 		}
 
@@ -74,10 +78,10 @@ public class StyleTable extends Activity {
 			final int layoutResource;
 			switch (getItemViewType(row, column)) {
 				case 0:
-					layoutResource = R.layout.item_table1_header;
+					layoutResource = R.layout.left_row;
 				break;
 				case 1:
-					layoutResource = R.layout.item_table1;
+					layoutResource = R.layout.item_upper_header;
 				break;
 				default:
 					throw new RuntimeException("wtf?");

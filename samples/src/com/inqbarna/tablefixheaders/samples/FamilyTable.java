@@ -116,9 +116,16 @@ public class FamilyTable extends Activity {
 		}
 
 		@Override
-		public int getHeaderWidth() {
+		public int getHorizontalHeaderWidth() {
 			return 0;
 		}
+
+		@Override
+		public int getVerticalHeaderWidth() {
+			return 0;
+		}
+
+
 
 		@Override
 		public View getView(int row, int column, View convertView, ViewGroup parent) {

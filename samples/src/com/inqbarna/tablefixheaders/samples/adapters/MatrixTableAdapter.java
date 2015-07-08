@@ -51,7 +51,12 @@ public class MatrixTableAdapter<T> extends BaseTableAdapter {
 	}
 
 	@Override
-	public int getHeaderWidth() {
+	public int getHorizontalHeaderWidth() {
+		return 200;
+	}
+
+	@Override
+	public int getVerticalHeaderWidth() {
 		return 200;
 	}
 

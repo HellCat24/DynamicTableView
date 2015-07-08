@@ -39,10 +39,6 @@ public class CustomTableFixHeaders extends ViewGroup {
 
     private int maxRowWidth;
 
-    //header in left top corner
-    @SuppressWarnings("unused")
-    private View headView;
-
     // upper header
     private List<View> rowViewList;
     //left header
@@ -77,7 +73,6 @@ public class CustomTableFixHeaders extends ViewGroup {
     public CustomTableFixHeaders(Context context, AttributeSet attrs) {
         super(context, attrs);
 
-        this.headView = null;
         this.rowViewList = new ArrayList<View>();
         this.columnViewList = new ArrayList<View>();
         this.bodyViewTable = new ArrayList<List<View>>();
@@ -241,6 +236,53 @@ public class CustomTableFixHeaders extends ViewGroup {
             // header
             if (row == 0) {
 
+                if (scrollX[row] > 0) {
+
+                    while (widths[row][leftColumnIndex[row]] + widths[0][0] < scrollX[row]) {
+                        if(rowViewList.size()>1){
+                            removeLeftHeader();
+                            scrollX[row] -= widths[row][leftColumnIndex[row]] + widths[0][0];
+                            leftColumnIndex[row]++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    while (getFilledHeaderWidth() < width) {
+                        if(!addRightHeader()){
+                            break;
+                        }
+                    }
+
+                } else {
+
+                    while (getFilledHeaderWidth() - widths[row][leftColumnIndex[row] + rowViewList.size()] >= width) {
+                        removeRightHeader();
+                    }
+
+                    if (rowViewList.isEmpty()) {
+                        while (scrollX[row] < 0) {
+                            leftColumnIndex[row]--;
+                            scrollX[row] += widths[row][leftColumnIndex[row] + 1];
+                        }
+                        while (getFilledHeaderWidth() < width) {
+                            if (!addRightHeader()) {
+                                break;
+                            }
+
+                        }
+                    } else {
+                        while (0 > scrollX[row]) {
+                            if (!addLeftHeader()) {
+                                break;
+                            }
+                            leftColumnIndex[row]--;
+                            scrollX[row] += widths[row][leftColumnIndex[row] + 1];
+                        }
+                    }
+                }
+
+
             } else {
                 //item
                 if (scrollX[row] != 0) {
@@ -272,16 +314,21 @@ public class CustomTableFixHeaders extends ViewGroup {
                             itemRow++;
                         } else {
 
-                            while (widths[row][leftColumnIndex[row] + 1] < scrollX[row]) {
-                                scrollX[row] -= widths[row][leftColumnIndex[row] + 1];
-                                leftColumnIndex[row]++;
-                            }// update visible views first visible column values, add or delete views
+                            if (leftColumnIndex[row] + 1 < columnCount)
+                                while (widths[row][leftColumnIndex[row] + 1] < scrollX[row]) {
+                                    scrollX[row] -= widths[row][leftColumnIndex[row] + 1];
+                                    leftColumnIndex[row]++;
+                                }// update visible views first visible column values, add or delete views
                         }
                     } else {
                         if (row > firstRow && row <= visibleRowSize) {
 
                             while (getFilledWidth(row, bodyViewTable.get(itemRow).size()) - widths[row][leftColumnIndex[row] + bodyViewTable.get(itemRow).size()] >= width) {
-                                removeRight(itemRow);
+                                if (bodyViewTable.get(itemRow).size() > 1) {
+                                    removeRight(itemRow);
+                                } else {
+                                    break;
+                                }
                             }
 
                             int tempItemSize = bodyViewTable.get(itemRow).size();
@@ -396,17 +443,25 @@ public class CustomTableFixHeaders extends ViewGroup {
         return false;
     }
 
-    private void addHorizontalItem(int column, int row, int itemIndex) {
-        //add items
-        List<View> list = bodyViewTable.get(row);
-        View view = makeView(row, column, widths[row][column + 1], heights[row]);
-        list.add(itemIndex, view);
+    //add row header
+    private boolean addLeftHeader() {
+        return addHorizontalHeader(leftColumnIndex[HEADER_INDEX] - 1, 0);
     }
 
     //add row header
-    private void addHorizontalHeader(int column, int headerIndex) {
-        View view = makeView(-1, column, widths[0][column + 1], heights[0]);
-        rowViewList.add(headerIndex, view);
+    private boolean addRightHeader() {
+       return addHorizontalHeader(leftColumnIndex[HEADER_INDEX] + rowViewList.size(), rowViewList.size());
+    }
+
+
+    //add row header
+    private boolean addHorizontalHeader(int column, int headerIndex) {
+        if (column < columnCount) {
+            View view = makeView(-1, column, widths[0][column + 1], heights[0]);
+            rowViewList.add(headerIndex, view);
+            return true;
+        }
+        return false;
     }
 
     private void addTop() {
@@ -438,6 +493,14 @@ public class CustomTableFixHeaders extends ViewGroup {
 
     private void removeLeft(int row) {
         removeLeftOrRight(0, row);
+    }
+
+    private void removeLeftHeader() {
+        removeView(rowViewList.remove(0));
+    }
+
+    private void removeRightHeader() {
+        removeView(rowViewList.remove(rowViewList.size() - 1));
     }
 
     private synchronized void removeRight(int row) {
@@ -577,8 +640,6 @@ public class CustomTableFixHeaders extends ViewGroup {
 
                 right = Math.min(width, maxRowWidth);
                 bottom = Math.min(height, sumArray(heights));
-
-                headView = makeAndSetup(-1, -1, 0, 0, widths[0][0], heights[0]);
 
                 scrollBounds();
                 adjustFirstCellsAndScroll();
@@ -739,7 +800,6 @@ public class CustomTableFixHeaders extends ViewGroup {
     }
 
     private void resetTable() {
-        headView = null;
         rowViewList.clear();
         columnViewList.clear();
         bodyViewTable.clear();
@@ -820,6 +880,10 @@ public class CustomTableFixHeaders extends ViewGroup {
 
     private int getMaxScrollY() {
         return Math.max(0, sumArray(heights) - height);
+    }
+
+    private int getFilledHeaderWidth() {
+        return sumArray(widths, HEADER_INDEX, leftColumnIndex[HEADER_INDEX] + 1, rowViewList.size()) - scrollX[HEADER_INDEX];
     }
 
     private int getFilledWidth(int row, int initialItemsCount) {

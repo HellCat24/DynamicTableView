@@ -11,7 +11,6 @@ import android.view.ViewGroup;
  * set.
  *
  * @author Brais Gab�n (InQBarna)
- * @see TableFixHeaders
  */
 public interface TableAdapter {
 
@@ -56,7 +55,9 @@ public interface TableAdapter {
     public int getMaxColumnCount();
 
 
-    public int getHeaderWidth();
+    public int getHorizontalHeaderWidth();
+
+    public int getVerticalHeaderWidth();
 
     /**
      * Get a View that displays the data at the specified row and column in the
