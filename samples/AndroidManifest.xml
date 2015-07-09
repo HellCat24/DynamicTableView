@@ -39,7 +39,7 @@
             android:label="@string/family_adapter" >
         </activity>
         <activity
-            android:name=".custom.CustomActivity"
+            android:name=".CustomActivity"
             android:label="@string/family_adapter" >
         </activity>
     </application>

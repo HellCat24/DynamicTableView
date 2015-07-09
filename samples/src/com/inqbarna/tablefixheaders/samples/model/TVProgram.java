@@ -1,7 +1,5 @@
 package com.inqbarna.tablefixheaders.samples.model;
 
-import android.graphics.Color;
-
 /**
  * Created by tac on 08.07.15.
  */
@@ -10,9 +8,11 @@ public interface TVProgram {
 
     long getEndTime();
 
-    String getName();
+    long getDurationInSeconds();
+
+    String getTitle();
 
     String getDescription();
 
-    Color getColor();
+    int getColor();
 }

@@ -4,4 +4,9 @@
     <dimen name="table_width">100dp</dimen>
     <dimen name="table_height">40dp</dimen>
 
+
+    <dimen name="half_hour_size">300dp</dimen>
+    <dimen name="tv_program_height">60dp</dimen>
+    <dimen name="tv_time_height">30dp</dimen>
+
 </resources>

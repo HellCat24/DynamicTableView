@@ -4,15 +4,8 @@ import android.database.DataSetObserver;
 import android.view.View;
 import android.view.ViewGroup;
 
-/**
- * The TableAdapter object acts as a bridge between an TableFixHeaders and the
- * underlying data for that view. The Adapter provides access to the data items.
- * The Adapter is also responsible for making a View for each item in the data
- * set.
- *
- * @author Brais Gab�n (InQBarna)
- */
-public interface TableAdapter {
+
+public interface TableAdapter<T> {
 
     /**
      * An item view type that causes the AdapterView to ignore the item view.
@@ -54,9 +47,14 @@ public interface TableAdapter {
      */
     public int getMaxColumnCount();
 
-
+    /**
+     * @return upper header width.
+     */
     public int getHorizontalHeaderWidth();
 
+    /**
+     * @return left header width.
+     */
     public int getVerticalHeaderWidth();
 
     /**
@@ -78,12 +76,14 @@ public interface TableAdapter {
     /**
      * Return the width of the column.
      *
+     * @param row    The row of the item within the adapter's data table
      * @param column the column. If the column is <code>-1</code> it is the header.
      * @return The width of the column, in pixels.
      */
     public int getWidth(int row, int column);
 
-    public int getWidth(int column);
+
+    public int getWidth(int row);
 
     /**
      * Return the height of the row.
@@ -124,6 +124,8 @@ public interface TableAdapter {
      * @return The number of types of Views that will be created by this adapter
      */
     public int getViewTypeCount();
+
+    public T getObject(int row, int column);
 
     public int getItemId(int position);
 

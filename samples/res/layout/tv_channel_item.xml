@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    android:background="@drawable/tv_chanell_item_bg"
+    android:orientation="horizontal"
+    android:padding="4dp">
+
+    <View
+        android:id="@+id/tv_program_left_border"
+        android:layout_width="2dp"
+        android:layout_height="match_parent"
+        android:background="@android:color/holo_red_dark"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/tv_program_upper_border"
+            android:layout_width="30dp"
+            android:layout_height="2dp"
+            android:background="@android:color/holo_red_dark"/>
+
+        <TextView
+            android:id="@+id/txt_tv_program_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:gravity="left"
+            android:padding="8dp"
+            android:text="MythBusters"
+            android:textColor="@android:color/background_dark"
+            android:textSize="12dp" />
+
+        <TextView
+            android:id="@+id/txt_tv_program_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_vertical"
+            android:text="13:10 - 15:45"
+            android:textColor="@android:color/background_dark"
+            android:textSize="10dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

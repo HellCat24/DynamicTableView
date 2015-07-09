@@ -1,29 +1,56 @@
-package com.inqbarna.tablefixheaders.samples.custom;
+package com.inqbarna.tablefixheaders.samples;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.view.View;
-import android.view.ViewGroup;
 
-import com.inqbarna.tablefixheaders.CustomTableFixHeaders;
-import com.inqbarna.tablefixheaders.samples.R;
+import com.inqbarna.tablefixheaders.DynamicTableView;
+import com.inqbarna.tablefixheaders.samples.adapters.ChannelAdapter;
 import com.inqbarna.tablefixheaders.samples.adapters.SampleTableAdapter;
+import com.inqbarna.tablefixheaders.samples.model.DummyTVProgram;
+import com.inqbarna.tablefixheaders.samples.model.TVProgram;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class CustomActivity extends Activity {
 
-    int size = 15;
+    int size = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custom_table);
 
-        CustomTableFixHeaders tableFixHeaders = (CustomTableFixHeaders) findViewById(R.id.table);
+        DynamicTableView tableFixHeaders = (DynamicTableView) findViewById(R.id.table);
         tableFixHeaders.setAdapter(new MyAdapter(this));
+        //generateDummyData(tableFixHeaders);
+    }
+
+    private void generateDummyData(DynamicTableView dynamicTableView) {
+        List<List<TVProgram>> mBroadCast = new ArrayList();
+
+        for (int i = 0; i < 15; i++) {
+            mBroadCast.add(new ArrayList<TVProgram>());
+        }
+
+        Random random = new Random();
+        TVProgram tvProgram = new DummyTVProgram();
+
+        for (List<TVProgram> list : mBroadCast) {
+            int columnCount = random.nextInt(5) + 20;
+            list.add(tvProgram);
+            for (int i = 1; i < columnCount; i++) {
+                list.add(new DummyTVProgram(list.get(0).getStartTime()));
+            }
+        }
+
+        ChannelAdapter channelAdapter = new ChannelAdapter(this);
+        channelAdapter.setData(mBroadCast);
+
+        dynamicTableView.setAdapter(channelAdapter);
     }
 
 
@@ -51,12 +78,15 @@ public class CustomActivity extends Activity {
             widths = new int[getRowCount()][getMaxColumnCount()];
 
             Random rnd = new Random();
+
+            int columnCount;
+
             for (int i = 0; i < getRowCount(); i++) {
-                for (int j = 0; j < getMaxColumnCount(); j++) {
-                    widths[i][j] = rnd.nextInt(300) + 500;
+                columnCount = 6 + rnd.nextInt(3);
+                for (int j = 0; j < columnCount; j++) {
+                    widths[i][j] = rnd.nextInt(100) + 400;
                 }
             }
-            widths[getRowCount() - 1][getMaxColumnCount() - 1] = 500;
         }
 
         @Override
@@ -71,7 +101,7 @@ public class CustomActivity extends Activity {
 
         @Override
         public int getHorizontalHeaderWidth() {
-            return 50;
+            return 100;
         }
 
         @Override
@@ -111,13 +141,10 @@ public class CustomActivity extends Activity {
             final int layoutResource;
             switch (getItemViewType(row, column)) {
                 case 0:
-                    layoutResource = R.layout.item_upper_header;
+                    layoutResource = R.layout.item_table_header;
                     break;
                 case 1:
-                    layoutResource = R.layout.left_row;
-                    break;
-                case 2:
-                    layoutResource = R.layout.item_programm;
+                    layoutResource = R.layout.item_table;
                     break;
                 default:
                     throw new RuntimeException("wtf?");
@@ -126,27 +153,22 @@ public class CustomActivity extends Activity {
         }
 
         @Override
-        public View getView(int row, int column, View converView, ViewGroup parent) {
-            if (converView == null) {
-                converView = getLayoutInflater().inflate(getLayoutResource(row, column), parent, false);
-            }
-            return converView;
-        }
-
-        @Override
         public int getItemViewType(int row, int column) {
             if (row < 0) {
                 return 0;
-            }
-            if (column < 0) {
+            } else {
                 return 1;
             }
-            return 2;
         }
 
         @Override
         public int getViewTypeCount() {
-            return 3;
+            return 2;
+        }
+
+        @Override
+        public Object getObject(int row, int column) {
+            return null;
         }
 
         @Override

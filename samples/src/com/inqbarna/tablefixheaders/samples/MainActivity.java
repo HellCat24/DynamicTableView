@@ -8,8 +8,6 @@ import android.app.Activity;
 import android.app.ListActivity;
 import android.content.Intent;
 
-import com.inqbarna.tablefixheaders.samples.custom.CustomActivity;
-
 public class MainActivity extends ListActivity {
 
 	@Override

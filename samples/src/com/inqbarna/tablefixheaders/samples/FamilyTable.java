@@ -3,7 +3,6 @@ package com.inqbarna.tablefixheaders.samples;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.inqbarna.tablefixheaders.CustomTableFixHeaders;
 import com.inqbarna.tablefixheaders.TableFixHeaders;
 import com.inqbarna.tablefixheaders.adapters.BaseTableAdapter;
 
@@ -271,6 +270,11 @@ public class FamilyTable extends Activity {
 		@Override
 		public int getViewTypeCount() {
 			return 5;
+		}
+
+		@Override
+		public Object getObject(int row, int column) {
+			return null;
 		}
 
 		@Override

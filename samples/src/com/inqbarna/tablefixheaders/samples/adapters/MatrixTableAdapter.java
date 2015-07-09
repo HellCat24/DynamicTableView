@@ -96,6 +96,11 @@ public class MatrixTableAdapter<T> extends BaseTableAdapter {
 	}
 
 	@Override
+	public Object getObject(int row, int column) {
+		return null;
+	}
+
+	@Override
 	public int getItemId(int position) {
 		return 0;
 	}
