@@ -3,6 +3,10 @@
     <color name="shadow_start">#80000000</color>
     <color name="shadow_end">#00000000</color>
 
-    <color name="grey"> #E0E0E0</color>
+    <color name="tv_program_grey"> #e0e0e0</color>
+    <color name="tv_program_blue"> #70b0ff</color>
+    <color name="tv_program_time_color"> #949494</color>
+
+
 
 </resources>

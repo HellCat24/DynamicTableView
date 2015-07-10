@@ -71,6 +71,11 @@ public class DummyTVProgram implements TVProgram {
     }
 
     @Override
+    public long getDurationInMillis() {
+        return mEndDate - mStartDate;
+    }
+
+    @Override
     public String getTitle() {
         return "Stub Title";
     }

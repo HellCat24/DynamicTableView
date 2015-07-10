@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:gravity="center"
     android:orientation="horizontal"
-    android:background="@drawable/cell_bg">
+    android:background="@android:color/white">
 
     <View
         android:layout_width="1dp"
@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="start|bottom"
-        android:textColor="@android:color/background_dark"
+        android:textColor="@color/tv_program_time_color"
         android:padding="4dp" />
 
 </LinearLayout>

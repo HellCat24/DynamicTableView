@@ -41,6 +41,9 @@ public class DynamicTableView extends ViewGroup {
 
     private int maxRowWidth;
 
+    @SuppressWarnings("unused")
+    private View headView;
+
     // upper header
     private List<View> rowViewList;
     //left header
@@ -80,6 +83,7 @@ public class DynamicTableView extends ViewGroup {
     public DynamicTableView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
+        this.headView = null;
         this.rowViewList = new ArrayList<View>();
         this.columnViewList = new ArrayList<View>();
         this.bodyViewTable = new ArrayList<List<View>>();
@@ -642,6 +646,8 @@ public class DynamicTableView extends ViewGroup {
                 right = Math.min(width, maxRowWidth);
                 bottom = Math.min(height, sumArray(heights));
 
+                headView = makeAndSetup(-1, -1, 0, 0, widths[1][0], heights[0]);
+
                 scrollBounds();
                 adjustFirstCellsAndScroll();
 
@@ -833,6 +839,7 @@ public class DynamicTableView extends ViewGroup {
 
     private void addTableView(View view, int row, int column) {
         if (row == -1 && column == -1) {
+            view.bringToFront();
             addView(view, getChildCount() - 4);
         } else if (row == -1 || column == -1) {
             addView(view, getChildCount() - 5);

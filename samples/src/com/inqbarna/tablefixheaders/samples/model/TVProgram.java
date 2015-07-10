@@ -10,6 +10,8 @@ public interface TVProgram {
 
     long getDurationInSeconds();
 
+    long getDurationInMillis();
+
     String getTitle();
 
     String getDescription();

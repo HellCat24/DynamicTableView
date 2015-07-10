@@ -83,7 +83,7 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
         for (int i = 0; i < getRowCount(); i++) {
             columnCount = mBroadCast.get(i).size();
             for (int j = 0; j < columnCount; j++) {
-                widths[i][j] = rnd.nextInt(100) + 500;
+                widths[i][j] = rnd.nextInt(200) + 700;
                 mBroadCast.get(i).get(j).setDurationInSeconds(widths[i][j] * HALF_HOUR_IN_PIXELS / HALF_HOUR_IN_SECONDS);
             }
         }
@@ -163,6 +163,12 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
                     View upperBorder = converView.findViewById(R.id.tv_program_upper_border);
                     leftBorder.setBackgroundColor(tvProgram.getColor());
                     upperBorder.setBackgroundColor(tvProgram.getColor());
+                    long currentTime = Calendar.getInstance().getTimeInMillis();
+                    if (currentTime >= tvProgram.getStartTime() && currentTime <= tvProgram.getEndTime()) {
+                        converView.setBackgroundDrawable(mContext.getResources().getDrawable(R.drawable.tv_channel_going_now));
+                    } else {
+                        converView.setBackgroundDrawable(mContext.getResources().getDrawable(R.drawable.tv_channel_item_bg));
+                    }
                 }
                 break;
             default:

@@ -3,15 +3,14 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
-    android:background="@drawable/tv_chanell_item_bg"
+    android:background="@drawable/tv_channel_item_bg"
     android:orientation="horizontal"
     android:padding="4dp">
 
     <View
         android:id="@+id/tv_program_left_border"
         android:layout_width="2dp"
-        android:layout_height="match_parent"
-        android:background="@android:color/holo_red_dark"/>
+        android:layout_height="match_parent" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -21,8 +20,7 @@
         <View
             android:id="@+id/tv_program_upper_border"
             android:layout_width="30dp"
-            android:layout_height="2dp"
-            android:background="@android:color/holo_red_dark"/>
+            android:layout_height="2dp"/>
 
         <TextView
             android:id="@+id/txt_tv_program_name"
