@@ -14,7 +14,7 @@ public class DummyTVProgram implements TVProgram {
     private long ONE_MINUTE = ONE_SECOND_IN_MILLIS * 60;
 
     private int MIN_DURATION = (int) (20 * ONE_MINUTE);
-    private int DURATION_STEP = (int) (50 * ONE_MINUTE);
+    private int DURATION_STEP = (int) (80 * ONE_MINUTE);
 
     long mStartDate;
     long mEndDate;
@@ -22,16 +22,37 @@ public class DummyTVProgram implements TVProgram {
     String mTitle;
     String Description;
 
-    private Color mColor;
+    private int mColor;
 
     public DummyTVProgram() {
-        mStartDate = Calendar.getInstance().getTime().getTime();
-        mEndDate = mStartDate + new Random().nextInt(DURATION_STEP) + MIN_DURATION;
+        this(Calendar.getInstance().getTime().getTime(), -1);
     }
 
-    public DummyTVProgram(long startDate) {
+    public DummyTVProgram(long startDate, long maxEndDate) {
         mStartDate = startDate;
         mEndDate = mStartDate + new Random().nextInt(DURATION_STEP) + MIN_DURATION;
+
+        if (mEndDate > maxEndDate) {
+            mEndDate = maxEndDate - 1000 * 60 * 5;
+        }
+
+        Random rnd = new Random();
+        int count = rnd.nextInt(10);
+        if (count % 5 == 0) {
+            mColor = Color.RED;
+        }
+        if (count % 4 == 0) {
+            mColor = Color.BLUE;
+        }
+        if (count % 3 == 0) {
+            mColor = Color.GREEN;
+        }
+        if (count % 2 == 0) {
+            mColor = Color.YELLOW;
+        }
+        if (mColor == 0) {
+            mColor = Color.LTGRAY;
+        }
     }
 
     @Override
@@ -61,16 +82,15 @@ public class DummyTVProgram implements TVProgram {
 
     @Override
     public int getColor() {
-        int color = Color.BLACK;
-        if (getDurationInSeconds() % 5 == 0) {
-            return Color.RED;
-        }
-        if (getDurationInSeconds() % 3 == 0) {
-            return Color.GREEN;
-        }
-        if (getDurationInSeconds() % 2 == 0) {
-            return Color.YELLOW;
-        }
-        return color;
+        return mColor;
+    }
+
+    @Override
+    public void setDurationInSeconds(int durationInSeconds) {
+        mEndDate += durationInSeconds * 1000;
+    }
+
+    public void setEndDate(long endDate) {
+        this.mEndDate = endDate;
     }
 }

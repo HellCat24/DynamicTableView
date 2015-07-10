@@ -13,7 +13,9 @@ import com.inqbarna.tablefixheaders.samples.model.TVProgram;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 
 /**
@@ -28,23 +30,26 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
     private final int ITEM = 2;
 
     private final int ONE_SECOND_IN_MILLIS = 60 * 1000;
-    private final float HOUR_IN_SECONDS = 60 * 60;
-    private final float HALF_HOUR_IN_SECONDS = HOUR_IN_SECONDS / 2;
-    private final float THREE_DAYS_IN_SECONDS = HOUR_IN_SECONDS * 24 * 3;
+    private final int HOUR_IN_SECONDS = 60 * 60;
+    private final int HALF_HOUR_IN_SECONDS = HOUR_IN_SECONDS / 2;
+    private final int THREE_DAYS_IN_SECONDS = HOUR_IN_SECONDS * 24 * 3;
 
     private int HALF_HOUR_IN_PIXELS;
     private int PROGRAM_HEIGHT;
     private int TIME_HEIGHT;
-
+    private int VERTICAL_HEADER_SIZE;
 
     private int mFirstHeaderScroll;
 
     private List<List<TVProgram>> mBroadCast;
 
-    private long mStartTime = Calendar.getInstance().getTimeInMillis();
-    private long mEndTime = (long) (mStartTime + THREE_DAYS_IN_SECONDS);
+    private long mStartTime;
+    private long mEndTime;
 
-    private int mMaxColumnCount;
+    //72 hours
+    private int mMaxColumnCount = 144;
+
+    int widths[][];
 
     private final LayoutInflater mInflater;
 
@@ -52,12 +57,36 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
 
 
     public ChannelAdapter(Context context) {
+        this(context, Calendar.getInstance().getTimeInMillis());
+    }
+
+    public ChannelAdapter(Context context, long startTime) {
         mContext = context;
         mInflater = LayoutInflater.from(context);
+
+        mStartTime = startTime;
+        mEndTime = startTime + THREE_DAYS_IN_SECONDS;
 
         HALF_HOUR_IN_PIXELS = context.getResources().getDimensionPixelSize(R.dimen.half_hour_size);
         PROGRAM_HEIGHT = context.getResources().getDimensionPixelSize(R.dimen.tv_program_height);
         TIME_HEIGHT = context.getResources().getDimensionPixelSize(R.dimen.tv_time_height);
+        VERTICAL_HEADER_SIZE = context.getResources().getDimensionPixelSize(R.dimen.tv_left_header_width);
+    }
+
+    private void generateRandomWidth(int rowCount) {
+        widths = new int[rowCount][getMaxColumnCount()];
+
+        Random rnd = new Random();
+
+        int columnCount;
+
+        for (int i = 0; i < getRowCount(); i++) {
+            columnCount = mBroadCast.get(i).size();
+            for (int j = 0; j < columnCount; j++) {
+                widths[i][j] = rnd.nextInt(100) + 500;
+                mBroadCast.get(i).get(j).setDurationInSeconds(widths[i][j] * HALF_HOUR_IN_PIXELS / HALF_HOUR_IN_SECONDS);
+            }
+        }
     }
 
     @Override
@@ -77,8 +106,7 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
 
     @Override
     public int getVerticalHeaderWidth() {
-        //TODO ADD REAL SIZE
-        return 200;
+        return VERTICAL_HEADER_SIZE;
     }
 
     @Override
@@ -117,22 +145,25 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
                 }
                 break;
             case UPPER_HEADER:
-//                time = (TextView) converView.findViewById(R.id.txt_tv_channel_header);
-//                long columnTime = (long) (mStartTime + column * HALF_HOUR_IN_SECONDS * 1000);
-//                time.setText(FORMAT.format(new Date(columnTime)));
-                setText(converView, getCellString(row, column));
+                time = (TextView) converView.findViewById(R.id.txt_tv_channel_header);
+                long columnTime = (long) (mStartTime + column * HALF_HOUR_IN_SECONDS * 1000);
+                time.setText(FORMAT.format(new Date(columnTime)));
+                //setText(converView, getCellString(row, column));
                 break;
             case ITEM:
-                time = (TextView) converView.findViewById(R.id.txt_tv_program_name);
+                TextView name = (TextView) converView.findViewById(R.id.txt_tv_program_name);
+                time = (TextView) converView.findViewById(R.id.txt_tv_program_time);
+
                 TVProgram tvProgram = getObject(row, column);
                 if (tvProgram != null) {
                     long duration = tvProgram.getDurationInSeconds();
-                    time.setText("Program title Duration " + duration / 60);
+                    name.setText("Program title Duration " + duration / 60);
+                    time.setText(FORMAT.format(tvProgram.getStartTime()) + " - " + FORMAT.format(tvProgram.getEndTime()));
+                    View leftBorder = converView.findViewById(R.id.tv_program_left_border);
+                    View upperBorder = converView.findViewById(R.id.tv_program_upper_border);
+                    leftBorder.setBackgroundColor(tvProgram.getColor());
+                    upperBorder.setBackgroundColor(tvProgram.getColor());
                 }
-                View leftBorder = converView.findViewById(R.id.tv_program_left_border);
-                View upperBorder = converView.findViewById(R.id.tv_program_upper_border);
-                leftBorder.setBackgroundColor(tvProgram.getColor());
-                upperBorder.setBackgroundColor(tvProgram.getColor());
                 break;
             default:
                 throw new RuntimeException("wtf?");
@@ -147,8 +178,8 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
                 layoutResource = R.layout.tv_channel_left_row;
                 break;
             case UPPER_HEADER:
-                layoutResource = R.layout.item_table_header;
-                //layoutResource = R.layout.tv_channel_upper_header;
+                //layoutResource = R.layout.item_table_header;
+                layoutResource = R.layout.tv_channel_upper_header;
                 break;
             case ITEM:
                 layoutResource = R.layout.tv_channel_item;
@@ -169,22 +200,15 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
 
     @Override
     public int getWidth(int row, int column) {
-        if (row < 0) {
-            return getHorizontalHeaderWidth();
-        }
-        if (column < 0) {
-            return getVerticalHeaderWidth();
-        }
-        List<TVProgram> list = mBroadCast.get(row);
+      /*  List<TVProgram> list = mBroadCast.get(row);
         if (column < list.size()) {
             return getSize(list.get(column));
-        }
-        return -1;
-    }
+        }*/
 
-    @Override
-    public int getWidth(int row) {
-        return 0;
+        if (widths == null) {
+            return 0;
+        }
+        return widths[row][column];
     }
 
     private int getSize(TVProgram tvProgram) {
@@ -232,11 +256,6 @@ public class ChannelAdapter extends BaseTableAdapter<TVProgram> {
 
     public void setData(List<List<TVProgram>> broadCast) {
         mBroadCast = broadCast;
-        mMaxColumnCount = mBroadCast.get(0).size();
-        for (int i = 1; i < mBroadCast.size(); i++) {
-            if (mMaxColumnCount < mBroadCast.get(i).size()) {
-                mMaxColumnCount = mBroadCast.get(i).size();
-            }
-        }
+        generateRandomWidth(mBroadCast.size());
     }
 }

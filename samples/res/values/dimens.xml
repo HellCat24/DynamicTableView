@@ -8,5 +8,7 @@
     <dimen name="half_hour_size">300dp</dimen>
     <dimen name="tv_program_height">60dp</dimen>
     <dimen name="tv_time_height">30dp</dimen>
+    <dimen name="tv_left_header_width">80dp</dimen>
+
 
 </resources>

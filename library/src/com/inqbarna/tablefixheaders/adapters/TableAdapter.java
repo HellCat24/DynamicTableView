@@ -36,24 +36,24 @@ public interface TableAdapter<T> {
     /**
      * How many rows are in the data table represented by this Adapter.
      *
-     * @return count of rows.
+     * @return Count of rows.
      */
     public int getRowCount();
 
     /**
      * How many columns are in the data table represented by this Adapter.
      *
-     * @return count of columns.
+     * @return Max count of columns.
      */
     public int getMaxColumnCount();
 
     /**
-     * @return upper header width.
+     * @return Upper header width.
      */
     public int getHorizontalHeaderWidth();
 
     /**
-     * @return left header width.
+     * @return Left header width.
      */
     public int getVerticalHeaderWidth();
 
@@ -74,16 +74,13 @@ public interface TableAdapter<T> {
     public View getView(int row, int column, View convertView, ViewGroup parent);
 
     /**
-     * Return the width of the column.
+     * Return the width of the specified row and column. Return 0 if there is no item there
      *
      * @param row    The row of the item within the adapter's data table
      * @param column the column. If the column is <code>-1</code> it is the header.
      * @return The width of the column, in pixels.
      */
     public int getWidth(int row, int column);
-
-
-    public int getWidth(int row);
 
     /**
      * Return the height of the row.

@@ -2,7 +2,6 @@ package com.inqbarna.tablefixheaders.samples;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Resources;
 import android.os.Bundle;
 
 import com.inqbarna.tablefixheaders.DynamicTableView;
@@ -12,42 +11,49 @@ import com.inqbarna.tablefixheaders.samples.model.DummyTVProgram;
 import com.inqbarna.tablefixheaders.samples.model.TVProgram;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 
-public class CustomActivity extends Activity {
+public class DynamicTableActivity extends Activity {
 
-    int size = 10;
+    int size = 20;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custom_table);
 
-        DynamicTableView tableFixHeaders = (DynamicTableView) findViewById(R.id.table);
-        tableFixHeaders.setAdapter(new MyAdapter(this));
-        //generateDummyData(tableFixHeaders);
+        final DynamicTableView tableFixHeaders = (DynamicTableView) findViewById(R.id.table);
+        //tableFixHeaders.setAdapter(new MyAdapter(this));
+        generateDummyData(tableFixHeaders);
+
     }
 
     private void generateDummyData(DynamicTableView dynamicTableView) {
         List<List<TVProgram>> mBroadCast = new ArrayList();
 
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 20; i++) {
             mBroadCast.add(new ArrayList<TVProgram>());
         }
 
         Random random = new Random();
-        TVProgram tvProgram = new DummyTVProgram();
+
+        long startTime = Calendar.getInstance().getTimeInMillis();
+        //72 hours from start
+        long maxEndTime = startTime + 60 * 60 * 24 * 3 * 1000;
 
         for (List<TVProgram> list : mBroadCast) {
-            int columnCount = random.nextInt(5) + 20;
-            list.add(tvProgram);
+            int columnCount = random.nextInt(5) + 70;
+            list.add(new DummyTVProgram(startTime, maxEndTime));
             for (int i = 1; i < columnCount; i++) {
-                list.add(new DummyTVProgram(list.get(0).getStartTime()));
+                list.add(new DummyTVProgram(list.get(i - 1).getEndTime(), maxEndTime));
             }
         }
 
-        ChannelAdapter channelAdapter = new ChannelAdapter(this);
+        ((DummyTVProgram) mBroadCast.get(0).get(mBroadCast.get(0).size() - 1)).setEndDate(maxEndTime);
+
+        ChannelAdapter channelAdapter = new ChannelAdapter(this, startTime);
         channelAdapter.setData(mBroadCast);
 
         dynamicTableView.setAdapter(channelAdapter);
@@ -56,9 +62,6 @@ public class CustomActivity extends Activity {
 
     public class MyAdapter extends SampleTableAdapter {
 
-        public int NO_ITEM = -1;
-
-        private final int width;
         private final int height;
 
         int widths[][];
@@ -66,9 +69,6 @@ public class CustomActivity extends Activity {
         public MyAdapter(Context context) {
             super(context);
 
-            Resources resources = context.getResources();
-
-            width = 200;
             height = 100;
 
             generateRandomWidth();
@@ -82,7 +82,7 @@ public class CustomActivity extends Activity {
             int columnCount;
 
             for (int i = 0; i < getRowCount(); i++) {
-                columnCount = 6 + rnd.nextInt(3);
+                columnCount = 135 + rnd.nextInt(9);
                 for (int j = 0; j < columnCount; j++) {
                     widths[i][j] = rnd.nextInt(100) + 400;
                 }
@@ -96,34 +96,23 @@ public class CustomActivity extends Activity {
 
         @Override
         public int getMaxColumnCount() {
-            return 10;
+            return 144;
         }
 
         @Override
         public int getHorizontalHeaderWidth() {
-            return 100;
+            return 500;
         }
 
         @Override
         public int getVerticalHeaderWidth() {
-            return 500;
+            return 100;
         }
 
 
         @Override
         public int getWidth(int row, int column) {
-            if (row < 0) {
-                return getVerticalHeaderWidth();
-            }
-            if (column < 0) {
-                return getHorizontalHeaderWidth();
-            }
             return widths[row][column];
-        }
-
-        @Override
-        public int getWidth(int column) {
-            return width;
         }
 
         @Override

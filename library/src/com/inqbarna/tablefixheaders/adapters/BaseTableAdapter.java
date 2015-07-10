@@ -3,10 +3,6 @@ package com.inqbarna.tablefixheaders.adapters;
 import android.database.DataSetObservable;
 import android.database.DataSetObserver;
 
-/**
- * Common base class of common implementation for an {@link TableAdapter} that
- * can be used in {@link }.
- */
 public abstract class BaseTableAdapter<T> implements TableAdapter<T> {
 	private final DataSetObservable mDataSetObservable = new DataSetObservable();
 

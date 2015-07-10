@@ -15,4 +15,6 @@ public interface TVProgram {
     String getDescription();
 
     int getColor();
+
+    void setDurationInSeconds(int durationInSeconds);
 }

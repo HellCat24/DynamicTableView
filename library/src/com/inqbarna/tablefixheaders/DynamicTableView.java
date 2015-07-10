@@ -31,15 +31,13 @@ public class DynamicTableView extends ViewGroup {
     private TableAdapter adapter;
     private int scrollX[];
     private int scrollY;
-    //visible rows
+    //first visible row
     private int firstRow;
-    //visible header column
+    //first visible column
     private int[] leftColumnIndex;
     //items measures
     private int[][] widths;
     private int[] heights;
-
-    private boolean[] isDummyColumnAdded;
 
     private int maxRowWidth;
 
@@ -53,6 +51,7 @@ public class DynamicTableView extends ViewGroup {
     private int rowCount;
     private int columnCount;
 
+    //view params
     private int width;
     private int height;
 
@@ -70,6 +69,8 @@ public class DynamicTableView extends ViewGroup {
 
     private int touchSlop;
 
+    //scroll from left to right is disallowed when upper header reach it's end
+    //prevents overscroll
     private boolean isScrollAvailable = true;
 
     public DynamicTableView(Context context) {
@@ -184,6 +185,7 @@ public class DynamicTableView extends ViewGroup {
 
     @Override
     public void scrollTo(int x, int y) {
+        // in case of needRelayout rest all variables
         if (needRelayout) {
 
             for (int i = 0; i < rowCount + 1; i++) {
@@ -194,19 +196,7 @@ public class DynamicTableView extends ViewGroup {
             scrollY = y;
             firstRow = 0;
         } else {
-
-            throw new RuntimeException("scrollTo not supported");
-          /*  int tempX;
-
-            if(x!=0){
-                for (int row = 0; row < rowCount + 1; row++) {
-                    tempX = x;
-                    tempX = tempX - sumArray(widths, row, 1, leftColumnIndex[row]) - scrollX[row];
-                    scrollX[row] += tempX;
-                }
-            }
-
-            scrollBy(x, y - sumArray(heights, 1, firstRow) - scrollY);*/
+            scrollBy(x - sumArray(widths, 0, 1, leftColumnIndex[0]) - scrollX[0], y - sumArray(heights, 1, firstRow) - scrollY);
         }
     }
 
@@ -215,41 +205,31 @@ public class DynamicTableView extends ViewGroup {
 
         if (x != 0) {
             for (int row = 0; row < rowCount + 1; row++) {
-                scrollX[row] += x;
+                //if isScrollAvailable we update current scrollX value
+                if (isScrollAvailable) {
+                    scrollX[row] += x;
+                } else
+                    // else scroll from left to right is disabled
+                    // allow scroll only from right to left e.g. x < 0
+                    if (x < 0) {
+                        isScrollAvailable = true;
+                        scrollX[row] += x;
+                    } else {
+                        break;
+                    }
             }
         }
+
         scrollY += y;
 
         if (x == 0 && y == 0 || needRelayout) {
             return;
         }
 
-        if (!isScrollAvailable && x > 0) {
-            scrollX[0] -= x;
-            for (int row = 1; row < rowCount + 1; row++) {
-                if (isDummyColumnAdded[row]) {
-                    scrollX[row] -= x;
-                }
-            }
-        } else {
-            isScrollAvailable = true;
-        }
-
-        if (!isScrollAvailable) {
-            return;
-        }
-
         scrollBounds();
 
-		/*
-         * TODO Improve the algorithm. Think big diagonal movements. If we are
-		 * in the top left corner and scrollBy to the opposite corner. We will
-		 * have created the views from the top right corner on the X part and we
-		 * will have eliminated to generate the right at the Y.
-		 */
-
         int visibleRowSize = firstRow + columnViewList.size();
-        //visible/relation item row
+        //visible/relation row in bodyViewTable
         int itemRow = 0;
 
         for (int row = 0; row < rowCount + 1; row++) {
@@ -257,7 +237,54 @@ public class DynamicTableView extends ViewGroup {
             // header
             if (row == 0) {
 
-                processHeader(row);
+                //if we scroll from right to left
+                if (scrollX[row] > 0) {
+
+                    //this means the left view is not visible so we can delete it
+                    while (widths[row][leftColumnIndex[row]] < scrollX[row]) {
+                        //we don't need to delete last item
+                        if (rowViewList.size() > 1) {
+                            removeLeftHeader();
+                            scrollX[row] -= widths[row][leftColumnIndex[row]];
+                            //increase first visible column
+                            leftColumnIndex[row]++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    //actual header width < available width
+                    while (getFilledHeaderWidth() < width) {
+                        if (!addRightHeader()) {
+                            //if we can't add header we reach end of the list
+                            isScrollAvailable = false;
+                            break;
+                        }
+                    }
+
+                }
+
+                if (!isScrollAvailable) {
+                    break;
+                }
+                //if we scroll from left to right
+                else {
+
+                    while (getFilledHeaderWidth() - widths[row][leftColumnIndex[row] + rowViewList.size()] >= width) {
+                        if (rowViewList.size() > 0) {
+                            removeRightHeader();
+                        }
+                    }
+
+                    while (0 > scrollX[row]) {
+                        if (!addLeftHeader()) {
+                            break;
+                        }
+                        leftColumnIndex[row]--;
+                        scrollX[row] += widths[row][leftColumnIndex[row] + 1];
+                    }
+                }
+
 
             } else {
                 //item
@@ -267,14 +294,20 @@ public class DynamicTableView extends ViewGroup {
                         // update visible views first visible column values, add or delete views
                         if (row > firstRow && row <= visibleRowSize) {
 
-                            while (widths[row][leftColumnIndex[row] + 1] < scrollX[row]) {
-                                if (bodyViewTable.get(itemRow).size() > 1) {
-                                    removeLeft(itemRow);
-                                    scrollX[row] -= widths[row][leftColumnIndex[row] + 1];
-                                    leftColumnIndex[row]++;
-                                } else {
-                                    break;
-                                }
+                            if (leftColumnIndex[row] + 1 < columnCount) {
+                                if (widths[row][leftColumnIndex[row] + 1] != 0)
+                                    while (widths[row][leftColumnIndex[row] + 1] < scrollX[row]) {
+                                        if (bodyViewTable.get(itemRow).size() > 1) {
+                                            removeLeft(itemRow);
+                                            scrollX[row] -= widths[row][leftColumnIndex[row] + 1];
+                                            leftColumnIndex[row]++;
+                                            if (widths[row][leftColumnIndex[row] + 1] == 0 || leftColumnIndex[row] + 1 >= columnCount) {
+                                                break;
+                                            }
+                                        } else {
+                                            break;
+                                        }
+                                    }
                             }
 
                             int tempItemSize = bodyViewTable.get(itemRow).size();
@@ -290,59 +323,41 @@ public class DynamicTableView extends ViewGroup {
                             itemRow++;
                         } else {
                             // update non visible views first visible column values
-                            if (leftColumnIndex[row] + 1 < columnCount)
-                                if(widths[row][leftColumnIndex[row] + 1] != 0){
+                            if (leftColumnIndex[row] + 1 < columnCount) {
+                                if (widths[row][leftColumnIndex[row] + 1] != 0)
                                     while (widths[row][leftColumnIndex[row] + 1] < scrollX[row]) {
                                         scrollX[row] -= widths[row][leftColumnIndex[row] + 1];
                                         leftColumnIndex[row]++;
+                                        if (widths[row][leftColumnIndex[row] + 1] == 0 || leftColumnIndex[row] + 1 >= columnCount) {
+                                            break;
+                                        }
                                     }
-                                }
+                            }
                         }
                     } else {
                         if (row > firstRow && row <= visibleRowSize) {
 
-                            while (getFilledWidth(row, bodyViewTable.get(itemRow).size()) - widths[row][leftColumnIndex[row] + bodyViewTable.get(itemRow).size()] >= width) {
-                                if (bodyViewTable.get(itemRow).size() > 1) {
-                                    if (isDummyColumnAdded[row]) {
-                                        isDummyColumnAdded[row] = false;
+                            if (leftColumnIndex[row] + bodyViewTable.get(itemRow).size() < columnCount + 1 || widths[row][leftColumnIndex[row] + bodyViewTable.get(itemRow).size()] != 0)
+                                while (getFilledWidth(row, bodyViewTable.get(itemRow).size()) - widths[row][leftColumnIndex[row] + bodyViewTable.get(itemRow).size()] >= width) {
+                                    if (bodyViewTable.get(itemRow).size() > 1 && leftColumnIndex[row] + bodyViewTable.get(itemRow).size() < columnCount +1 && widths[row][leftColumnIndex[row] + bodyViewTable.get(itemRow).size()] != 0) {
+                                        removeRight(itemRow);
+                                    } else {
+                                        break;
                                     }
-                                    removeRight(itemRow);
-                                } else {
-                                    break;
                                 }
-                            }
 
-                            int tempItemSize = bodyViewTable.get(itemRow).size();
-
-                            if (rowViewList.isEmpty()) {
-                                while (scrollX[row] < 0) {
-                                    leftColumnIndex[row]--;
-                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
-                                }
-                                while (getFilledWidth(row, tempItemSize) < width) {
-                                    addRight(itemRow, row);
-                                }
-                            } else {
-                                while (0 > scrollX[row]) {
-                                    addLeft(itemRow, row);
-                                    leftColumnIndex[row]--;
-                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
-                                }
+                            while (0 > scrollX[row]) {
+                                addLeft(itemRow, row);
+                                leftColumnIndex[row]--;
+                                scrollX[row] += widths[row][leftColumnIndex[row] + 1];
                             }
 
                             itemRow++;
                         } else {
 
-                            if (rowViewList.isEmpty()) {
-                                while (scrollX[row] < 0) {
-                                    leftColumnIndex[row]--;
-                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
-                                }
-                            } else {
-                                while (0 > scrollX[row]) {
-                                    leftColumnIndex[row]--;
-                                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
-                                }
+                            while (0 > scrollX[row]) {
+                                leftColumnIndex[row]--;
+                                scrollX[row] += widths[row][leftColumnIndex[row] + 1];
                             }
                         }
                     }
@@ -387,70 +402,13 @@ public class DynamicTableView extends ViewGroup {
         repositionViews();
     }
 
-    private void processHeader(int row){
-
-        //if we scroll from right to left
-        if (scrollX[row] > 0) {
-
-            //this means the view with row and leftColumnIndex[row] is not visible so we can delete it
-            while (widths[row][leftColumnIndex[row]] < scrollX[row]) {
-                if (rowViewList.size() > 1) {
-                    removeLeftHeader();
-                    scrollX[row] -= widths[row][leftColumnIndex[row]];
-                    //increase first visible column
-                    leftColumnIndex[row]++;
-                } else {
-                    break;
-                }
-            }
-
-            //actual header width < available width
-            while (getFilledHeaderWidth() < width) {
-                if (!addRightHeader()) {
-                    //if we can't add header we reach end of the list
-                    isScrollAvailable = false;
-                    break;
-                }
-            }
-
-        }
-        //if we scroll from left to right
-        else {
-
-            while (getFilledHeaderWidth() - widths[row][leftColumnIndex[row] + rowViewList.size()] >= width) {
-                removeRightHeader();
-            }
-
-            if (rowViewList.isEmpty()) {
-                while (scrollX[row] < 0) {
-                    leftColumnIndex[row]--;
-                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
-                }
-                while (getFilledHeaderWidth() < width) {
-                    if (!addRightHeader()) {
-                        break;
-                    }
-
-                }
-            } else {
-                while (0 > scrollX[row]) {
-                    if (!addLeftHeader()) {
-                        break;
-                    }
-                    leftColumnIndex[row]--;
-                    scrollX[row] += widths[row][leftColumnIndex[row] + 1];
-                }
-            }
-        }
-
-    }
-
     /**
-     * Added right view
+     * Added left view
      *
-     * @param itemRow  relation (относительный) row i.e. visible row position in bodyViewTable
-     * @param addedRow row to add (абсолютный)
+     * @param itemRow  relation row i.e. visible row position in bodyViewTable
+     * @param addedRow row in widths
      */
+
     private void addLeft(int itemRow, int addedRow) {
         //addHorizontalHeader(leftColumnIndex[row] - 1, 0);
         int column = leftColumnIndex[addedRow] - 1;
@@ -462,8 +420,8 @@ public class DynamicTableView extends ViewGroup {
     /**
      * Added right view
      *
-     * @param itemRow  relation (относительный) row i.e. visible row position in bodyViewTable
-     * @param addedRow row to add (абсолютный)
+     * @param itemRow  relation row i.e. visible row position in bodyViewTable
+     * @param addedRow row in widths
      */
     private boolean addRight(int itemRow, int addedRow) {
         //addHorizontalHeader(firstVisibleColumn + rowItemsSize, rowViewList.size());
@@ -477,26 +435,19 @@ public class DynamicTableView extends ViewGroup {
             View view = makeView(addedRow - 1, column, widths[addedRow][column + 1], heights[addedRow]);
             list.add(view);
             return true;
-        } else {
-            if (!isDummyColumnAdded[addedRow]) {
-                isDummyColumnAdded[addedRow] = true;
-                View view = makeView(0, 0, widths[addedRow][columnCount + 1], 10);
-                list.add(view);
-            }
         }
         return false;
     }
 
-    //add row header
+    //add left row header
     private boolean addLeftHeader() {
         return addHorizontalHeader(leftColumnIndex[HEADER_INDEX] - 1, 0);
     }
 
-    //add row header
+    //add right row header
     private boolean addRightHeader() {
         return addHorizontalHeader(leftColumnIndex[HEADER_INDEX] + rowViewList.size(), rowViewList.size());
     }
-
 
     //add row header
     private boolean addHorizontalHeader(int column, int headerIndex) {
@@ -604,33 +555,29 @@ public class DynamicTableView extends ViewGroup {
                 scrollX = new int[rowCount + 1];
             }
 
-            widths = new int[rowCount + 1][columnCount + 2];
+            widths = new int[rowCount + 1][columnCount + 1];
 
-            int[] rowWidth = new int[rowCount + 1];
-
-            //TO DO REFACTOR
-            //-1 to tell adapter it's header
             for (int i = -1; i < rowCount; i++) {
                 int maxWidth = 0;
                 for (int j = -1; j < columnCount; j++) {
-                    int itemWidth = adapter.getWidth(i, j);
-                    widths[i + 1][j + 1] = itemWidth;
-                    maxWidth += itemWidth;
+                    if (i == -1) {
+                        int itemWidth = adapter.getHorizontalHeaderWidth();
+                        widths[i + 1][j + 1] = itemWidth;
+                        maxWidth += itemWidth;
+                    } else if (j == -1) {
+                        int itemWidth = adapter.getVerticalHeaderWidth();
+                        widths[i + 1][j + 1] = itemWidth;
+                        maxWidth += itemWidth;
+                    } else {
+                        int itemWidth = adapter.getWidth(i, j);
+                        widths[i + 1][j + 1] = itemWidth;
+                        maxWidth += itemWidth;
+                    }
                 }
-                rowWidth[i + 1] = maxWidth;
                 if (maxWidth > maxRowWidth) {
                     maxRowWidth = maxWidth;
                 }
             }
-
-            for (int i = 0; i < rowCount + 1; i++) {
-                widths[i][columnCount + 1] = maxRowWidth - rowWidth[i];
-            }
-
-            if (isDummyColumnAdded == null) {
-                isDummyColumnAdded = new boolean[rowCount + 1];
-            }
-
 
             heights = new int[rowCount + 1];
             for (int i = -1; i < rowCount; i++) {
@@ -698,7 +645,6 @@ public class DynamicTableView extends ViewGroup {
                 scrollBounds();
                 adjustFirstCellsAndScroll();
 
-                //upper header
                 left = widths[1][0] - scrollX[0];
                 int row = firstRow;
                 for (int i = leftColumnIndex[0]; i < columnCount && left < width; i++) {
@@ -708,7 +654,6 @@ public class DynamicTableView extends ViewGroup {
                     left = right;
                 }
 
-                //left header
                 top = heights[0] - scrollY;
                 for (int i = firstRow; i < rowCount && top < height; i++) {
                     bottom = top + heights[i + 1];
@@ -717,12 +662,10 @@ public class DynamicTableView extends ViewGroup {
                     top = bottom;
                 }
 
-                //items
                 top = heights[0] - scrollY;
                 for (int i = firstRow; i < rowCount && top < height; i++) {
                     // i + 1 skip header position for initial draw
                     bottom = top + heights[i + 1];
-                    // i + 1 due to headers data reserved at 0 indexes
                     left = widths[i + 1][0] - scrollX[i + 1];
                     List<View> list = new ArrayList<View>();
                     for (int j = leftColumnIndex[i]; j < columnCount && left < width; j++) {
@@ -741,7 +684,7 @@ public class DynamicTableView extends ViewGroup {
     private void repositionViews() {
         int left, top, right, bottom, i;
 
-        //row header
+        //upper header
         left = widths[1][0] - scrollX[0];
         i = firstRow;
         for (View view : rowViewList) {
@@ -765,32 +708,25 @@ public class DynamicTableView extends ViewGroup {
             bottom = top + heights[++i];
             int j = leftColumnIndex[i]; //+ 1 >= columnCount ? columnCount - list.size() : leftColumnIndex[i];
             left = widths[1][0] - scrollX[i];
-            int currentIndex = 0;
             for (View view : list) {
                 try {
-                    if (isDummyColumnAdded[i] && currentIndex == list.size() - 1) {
-                        right = left + widths[i][columnCount + 1];
-                    } else {
-                        right = left + widths[i][++j];
-                    }
+                    right = left + widths[i][++j];
                     view.layout(left, top, right, bottom);
                     left = right;
                 } catch (ArrayIndexOutOfBoundsException e) {
                     e.printStackTrace();
                 }
-                currentIndex++;
             }
             top = bottom;
         }
         invalidate();
     }
 
-
     private void scrollBounds() {
         for (int row = 0; row < rowCount + 1; row++) {
             scrollX[row] = scrollWidthBounds(scrollX[row], leftColumnIndex[row], widths, width, row);
-            scrollY = scrollBounds(scrollY, firstRow, heights, height);
         }
+        scrollY = scrollBounds(scrollY, firstRow, heights, height);
     }
 
     private int scrollBounds(int desiredScroll, int firstCell, int sizes[], int viewSize) {
@@ -808,19 +744,9 @@ public class DynamicTableView extends ViewGroup {
         if (desiredScroll == 0) {
             // no op
         } else if (desiredScroll < 0) {
-            // columnCount - 1 to get last item index
-            if (isDummyColumnAdded[row]) {
-                return desiredScroll;
-            } else {
-                desiredScroll = Math.max(desiredScroll, -sumArray(sizes, row, 1, firstCell));
-            }
+            desiredScroll = Math.max(desiredScroll, -sumArray(sizes, row, 1, firstCell));
         } else {
-            // columnCount - 1 to get last item index
-            if (isDummyColumnAdded[row]) {
-                return desiredScroll;
-            } else {
-                desiredScroll = Math.min(desiredScroll, Math.max(0, sumArray(sizes, row, 0, sizes[row].length - 1 - firstCell + 1) + sizes[row][0] - viewSize));
-            }
+            desiredScroll = Math.min(desiredScroll, Math.max(0, sumArray(sizes, row, 0, sizes[row].length - 1 - firstCell + 1) + sizes[row][0] - viewSize));
         }
         return desiredScroll;
     }
